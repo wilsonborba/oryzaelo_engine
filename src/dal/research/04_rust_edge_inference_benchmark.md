@@ -8,12 +8,12 @@ O benchmark foi executado em ambiente CPU com 1.000 iterações unitárias após
 
 | Métrica | Valor Obtido (Rust + ONNX) | Meta Borda Rust | Teto Orientador (USP/ESALQ) | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Latência Média** | **21.846 µs (0.0218 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado (228.9x mais rápido)** |
-| **Mediana (p50)** | **21.061 µs (0.0211 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Percentil 95 (p95)** | **25.451 µs (0.0255 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Percentil 99 (p99)** | **30.222 µs (0.0302 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Mínimo Absoluto** | **20.683 µs** | - | - | - |
-| **Máximo Absoluto** | **47.358 µs** | - | - | - |
+| **Latência Média** | **21.826 µs (0.0218 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado (229.1x mais rápido)** |
+| **Mediana (p50)** | **21.080 µs (0.0211 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Percentil 95 (p95)** | **24.634 µs (0.0246 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Percentil 99 (p99)** | **30.506 µs (0.0305 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Mínimo Absoluto** | **20.571 µs** | - | - | - |
+| **Máximo Absoluto** | **55.439 µs** | - | - | - |
 
 ## 2. Arquitetura do Tensor de Borda
 
