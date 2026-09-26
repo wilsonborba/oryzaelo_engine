@@ -228,3 +228,43 @@ pub async fn get_weather_analytics(
     Ok(Json(report))
 }
 
+#[derive(Deserialize)]
+pub struct DeleteRecordsPayload {
+    pub parcel_id: String,
+    pub dates: Vec<NaiveDate>,
+}
+
+#[derive(Serialize)]
+pub struct DeleteRecordsResponse {
+    pub message: String,
+    pub parcel_id: String,
+    pub deleted_count: usize,
+}
+
+/// Deletes specific daily weather records by date.
+pub async fn delete_records(
+    State(state): State<AppState>,
+    Json(payload): Json<DeleteRecordsPayload>,
+) -> Result<(StatusCode, Json<DeleteRecordsResponse>), AppError> {
+    let _ = state
+        .parcel_repo
+        .get_by_id(&payload.parcel_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("Parcel {} not found", payload.parcel_id)))?;
+
+    let count = state
+        .weather_repo
+        .delete_records(&payload.parcel_id, &payload.dates)
+        .await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(DeleteRecordsResponse {
+            message: format!("Deleted {} weather record(s)", count),
+            parcel_id: payload.parcel_id,
+            deleted_count: count,
+        }),
+    ))
+}
+
+

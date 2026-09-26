@@ -138,4 +138,37 @@ impl WeatherRepository {
 
         Ok(row.0 as usize)
     }
+
+    /// Deletes specific records for a parcel by dates.
+    pub async fn delete_records(&self, parcel_id: &str, dates: &[NaiveDate]) -> Result<usize, AppError> {
+        if dates.is_empty() {
+            return Ok(0);
+        }
+
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| AppError::Database(format!("Failed to begin delete transaction: {}", e)))?;
+
+        let mut total_deleted = 0;
+        for date in dates {
+            let deleted = sqlx::query("DELETE FROM weather_records WHERE parcel_id = ? AND record_date = ?")
+                .bind(parcel_id)
+                .bind(date.to_string())
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| AppError::Database(format!("Failed to delete record on {}: {}", date, e)))?
+                .rows_affected();
+
+            total_deleted += deleted as usize;
+        }
+
+        tx.commit()
+            .await
+            .map_err(|e| AppError::Database(format!("Failed to commit delete transaction: {}", e)))?;
+
+        Ok(total_deleted)
+    }
 }
+

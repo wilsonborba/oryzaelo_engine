@@ -45,11 +45,12 @@ pub fn create_router(state: AppState) -> Router {
         .route("/weather/upload-csv", post(weather::upload_csv_multipart))
         .route("/weather/ingest", post(weather::ingest_csv_json))
         .route("/weather/record", post(weather::ingest_single_record))
-        .route("/weather/records", get(weather::get_records))
+        .route("/weather/records", get(weather::get_records).delete(weather::delete_records))
         .route("/weather/history", get(weather::get_records))
         .route("/weather/analytics", get(weather::get_weather_analytics))
-        // Phenology Inference & History
+        // Phenology Inference, Simulation & History
         .route("/phenology/predict", post(phenology::predict_stage))
+        .route("/phenology/simulate", post(phenology::simulate_scenario))
         .route("/phenology/latest", get(phenology::get_latest_prediction))
         .route("/phenology/history", get(phenology::get_prediction_history))
         // Edge Node Configuration
