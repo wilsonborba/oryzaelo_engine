@@ -3,7 +3,7 @@
 //! Route registration, middlewares and fallback static service mounting.
 
 use crate::presentation::api::handlers::{
-    benchmark, config, devices, health, parcels, phenology, weather,
+    admin, benchmark, config, devices, health, parcels, phenology, weather,
 };
 use crate::presentation::api::state::AppState;
 use axum::routing::{get, post};
@@ -58,7 +58,11 @@ pub fn create_router(state: AppState) -> Router {
         .route("/benchmarks/latency", get(benchmark::run_latency_benchmark))
         .route("/benchmarks/biomet", get(benchmark::run_biomet_benchmark))
         .route("/benchmarks/storage", get(benchmark::run_storage_benchmark))
-        .route("/benchmarks/throughput", get(benchmark::run_throughput_benchmark));
+        .route("/benchmarks/throughput", get(benchmark::run_throughput_benchmark))
+        // Admin & Mock Data (Turnkey Testing for Evaluators and Farmers)
+        .route("/admin/populate", post(admin::populate_mock_data))
+        .route("/admin/clean", post(admin::clean_mock_data));
+
 
     let mut router = Router::new()
         // Root Liveness Ping (Infrastructure, Docker, systemd)
