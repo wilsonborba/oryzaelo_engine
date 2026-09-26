@@ -4,7 +4,9 @@
 //! and database resetting. Eliminates external Python runtimes on edge hardware (Raspberry Pi).
 
 use crate::core::error::AppError;
+use crate::domain::models::device_mapping::MetricColumnMapping;
 use crate::domain::models::locale::Locale;
+use crate::domain::models::metric_type::MetricType;
 use crate::domain::models::phenology::{PhenologyStage, TechnicalMetrics};
 use crate::domain::services::agronomic_advisor::AgronomicAdvisor;
 use chrono::{Duration, Utc};
@@ -72,7 +74,7 @@ impl MockDataService {
                 longitude: 100.1177,
                 days_ago: 65,
                 area_hectares: 15.0,
-                source: "Davis Vantage Pro2 (Central)",
+                source: "preset_davis_vantage",
             },
             ParcelPreset {
                 id: "talhao-varzea-chiangmai",
@@ -83,7 +85,7 @@ impl MockDataService {
                 longitude: 98.9847,
                 days_ago: 40,
                 area_hectares: 8.5,
-                source: "Pessl iMETOS 3.3 (Norte)",
+                source: "preset_pessl_imetos",
             },
             ParcelPreset {
                 id: "talhao-sequeiro-khonkaen",
@@ -94,7 +96,7 @@ impl MockDataService {
                 longitude: 102.8236,
                 days_ago: 95,
                 area_hectares: 22.0,
-                source: "Dragino LoRaWAN RS485",
+                source: "preset_dragino_renke",
             },
             ParcelPreset {
                 id: "talhao-piloto-ubon",
@@ -105,103 +107,84 @@ impl MockDataService {
                 longitude: 104.8473,
                 days_ago: 18,
                 area_hectares: 5.0,
-                source: "NASA POWER Daily Station",
+                source: "preset_nasa_power",
             },
         ];
 
-        // 1. Inserir Custom Device Mappings
-        let custom_devices = [
+        // 1. Inserir Custom Sensor Profiles: 2 bundled multi-metric stations
+        //    (matching real commercial products that report all 5 canonical
+        //    metrics from one combined feed) plus 2 standalone single-metric
+        //    sensors, demonstrating the real topology this schema supports.
+        let bundled_stations = [
             (
                 "mapping_dragino_sol_nascente",
                 "Estação LoRaWAN Fazenda Sol Nascente",
                 "Dragino Technology",
-                0,
                 "Timestamp",
                 "%Y-%m-%d %H:%M:%S",
-                "AirTemp_Max_C",
-                "C",
-                1.0,
-                "AirTemp_Min_C",
-                "C",
-                1.0,
-                "Precip_Accum_mm",
-                "mm",
-                1.0,
-                "Pyranometer_Solar_W_m2",
-                "W/m2",
-                0.0864,
-                "AirHumidity_Pct",
-                "%",
-                1.0,
+                [
+                    ("AirTemp_Max_C", "C", 1.0),
+                    ("AirTemp_Min_C", "C", 1.0),
+                    ("Precip_Accum_mm", "mm", 1.0),
+                    ("Pyranometer_Solar_W_m2", "W/m2", 0.0864),
+                    ("AirHumidity_Pct", "%", 1.0),
+                ],
             ),
             (
                 "mapping_campbell_pesquisa",
                 "Estação Micrometeorológica Campbell CR1000X",
                 "Campbell Scientific",
-                0,
                 "TIMESTAMP",
                 "%d/%m/%Y",
-                "AirTC_Max",
-                "C",
-                1.0,
-                "AirTC_Min",
-                "C",
-                1.0,
-                "Rain_mm_Tot",
-                "mm",
-                1.0,
-                "SlrMJ_Tot",
-                "MJ/m2",
-                1.0,
-                "RH_Max",
-                "%",
-                1.0,
+                [
+                    ("AirTC_Max", "C", 1.0),
+                    ("AirTC_Min", "C", 1.0),
+                    ("Rain_mm_Tot", "mm", 1.0),
+                    ("SlrMJ_Tot", "MJ/m2", 1.0),
+                    ("RH_Max", "%", 1.0),
+                ],
             ),
         ];
 
-        for d in &custom_devices {
-            sqlx::query(
-                r#"
-                INSERT INTO device_mappings (
-                    id, device_name, manufacturer, is_preset,
-                    date_col, date_format,
-                    t_max_col, t_max_unit, t_max_scale,
-                    t_min_col, t_min_unit, t_min_scale,
-                    rain_col, rain_unit, rain_scale,
-                    rad_col, rad_unit, rad_scale,
-                    rh_col, rh_unit, rh_scale,
-                    created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    device_name = excluded.device_name,
-                    manufacturer = excluded.manufacturer
-                "#,
-            )
-            .bind(d.0)
-            .bind(d.1)
-            .bind(d.2)
-            .bind(d.3)
-            .bind(d.4)
-            .bind(d.5)
-            .bind(d.6)
-            .bind(d.7)
-            .bind(d.8)
-            .bind(d.9)
-            .bind(d.10)
-            .bind(d.11)
-            .bind(d.12)
-            .bind(d.13)
-            .bind(d.14)
-            .bind(d.15)
-            .bind(d.16)
-            .bind(d.17)
-            .bind(d.18)
-            .bind(d.19)
-            .bind(d.20)
-            .bind(&now_iso)
-            .execute(pool)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
+        for d in &bundled_stations {
+            let metrics = vec![
+                MetricColumnMapping::new(MetricType::TMax, d.5[0].0, d.5[0].1, d.5[0].2),
+                MetricColumnMapping::new(MetricType::TMin, d.5[1].0, d.5[1].1, d.5[1].2),
+                MetricColumnMapping::new(MetricType::Rainfall, d.5[2].0, d.5[2].1, d.5[2].2),
+                MetricColumnMapping::new(MetricType::Radiation, d.5[3].0, d.5[3].1, d.5[3].2),
+                MetricColumnMapping::new(MetricType::Humidity, d.5[4].0, d.5[4].1, d.5[4].2),
+            ];
+            Self::upsert_sensor_profile(pool, d.0, d.1, d.2, d.3, d.4, &metrics, &now_iso).await?;
+        }
+
+        let standalone_sensors = [
+            (
+                "sensor_pluviometro_avulso",
+                "Pluviômetro Basculante Avulso (Portão Norte)",
+                "Generic LoRaWAN",
+                "ts",
+                "%Y-%m-%d",
+                MetricType::Rainfall,
+                "rain_mm",
+                "mm",
+                1.0,
+            ),
+            (
+                "sensor_piranometro_avulso",
+                "Piranômetro Solar Avulso (Mastro Central)",
+                "Generic LoRaWAN",
+                "ts",
+                "%Y-%m-%d",
+                MetricType::Radiation,
+                "solar_w_m2",
+                "W/m2",
+                0.0864,
+            ),
+        ];
+
+        for s in &standalone_sensors {
+            let metrics = vec![MetricColumnMapping::new(s.5, s.6, s.7, s.8)];
+            Self::upsert_sensor_profile(pool, s.0, s.1, s.2, s.3, s.4, &metrics, &now_iso).await?;
         }
 
         // 2. Inserir Edge Node Configs
@@ -308,28 +291,73 @@ impl MockDataService {
                     )
                 };
 
+                let t_max = (t_max * 100.0).round() / 100.0;
+                let t_min = (t_min * 100.0).round() / 100.0;
+                let precip = (precip * 10.0).round() / 10.0;
+                let rad = (rad * 10.0).round() / 10.0;
+                let rh = (rh.min(100.0) * 10.0).round() / 10.0;
+                let recorded_at = format!("{}T12:00:00Z", rec_iso);
+
+                // Seed each metric into its OWN reading table (this is the
+                // real per-sensor data the CRUD screens browse), tagged with
+                // the parcel's assigned bundled station id as provenance.
+                for (table, value) in [
+                    ("sensor_readings_t_max", t_max),
+                    ("sensor_readings_t_min", t_min),
+                    ("sensor_readings_rainfall", precip),
+                    ("sensor_readings_radiation", rad),
+                    ("sensor_readings_humidity", rh),
+                ] {
+                    let q = format!(
+                        "INSERT INTO {table} (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                    );
+                    sqlx::query(&q)
+                        .bind(p.id)
+                        .bind(p.source)
+                        .bind(value)
+                        .bind(&recorded_at)
+                        .bind(&now_iso)
+                        .execute(pool)
+                        .await
+                        .map_err(|e| AppError::Database(e.to_string()))?;
+                }
+
+                // Aggregate row: since every metric was just seeded together,
+                // this day is complete by construction.
                 sqlx::query(
                     r#"
                     INSERT INTO weather_records (
                         parcel_id, record_date, t_max, t_min,
                         precipitation_mm, radiation_mj_m2, relative_humidity_pct,
-                        source, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        t_max_sensor_id, t_min_sensor_id, rainfall_sensor_id, radiation_sensor_id, humidity_sensor_id,
+                        is_partial, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
                     ON CONFLICT(parcel_id, record_date) DO UPDATE SET
                         t_max = excluded.t_max,
                         t_min = excluded.t_min,
                         precipitation_mm = excluded.precipitation_mm,
                         radiation_mj_m2 = excluded.radiation_mj_m2,
-                        relative_humidity_pct = excluded.relative_humidity_pct
+                        relative_humidity_pct = excluded.relative_humidity_pct,
+                        t_max_sensor_id = excluded.t_max_sensor_id,
+                        t_min_sensor_id = excluded.t_min_sensor_id,
+                        rainfall_sensor_id = excluded.rainfall_sensor_id,
+                        radiation_sensor_id = excluded.radiation_sensor_id,
+                        humidity_sensor_id = excluded.humidity_sensor_id,
+                        is_partial = 0,
+                        updated_at = excluded.updated_at
                     "#,
                 )
                 .bind(p.id)
                 .bind(&rec_iso)
-                .bind((t_max * 100.0).round() / 100.0)
-                .bind((t_min * 100.0).round() / 100.0)
-                .bind((precip * 10.0).round() / 10.0)
-                .bind((rad * 10.0).round() / 10.0)
-                .bind((rh.min(100.0) * 10.0).round() / 10.0)
+                .bind(t_max)
+                .bind(t_min)
+                .bind(precip)
+                .bind(rad)
+                .bind(rh)
+                .bind(p.source)
+                .bind(p.source)
+                .bind(p.source)
+                .bind(p.source)
                 .bind(p.source)
                 .bind(&now_iso)
                 .execute(pool)
@@ -421,6 +449,15 @@ impl MockDataService {
 
     /// Cleans test data, resetting database to factory defaults while preserving presets.
     pub async fn clean(pool: &SqlitePool, reset_presets: bool) -> Result<MockCleanSummary, AppError> {
+        for table in [
+            "sensor_readings_t_max",
+            "sensor_readings_t_min",
+            "sensor_readings_rainfall",
+            "sensor_readings_radiation",
+            "sensor_readings_humidity",
+        ] {
+            sqlx::query(&format!("DELETE FROM {table};")).execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
+        }
         sqlx::query("DELETE FROM weather_records;").execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
         sqlx::query("DELETE FROM prediction_history;").execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
         sqlx::query("DELETE FROM parcels;").execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
@@ -447,6 +484,45 @@ impl MockDataService {
             predictions_remaining: row_h.0 as usize,
             device_mappings_remaining: row_d.0 as usize,
         })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn upsert_sensor_profile(
+        pool: &SqlitePool,
+        id: &str,
+        device_name: &str,
+        manufacturer: &str,
+        date_col: &str,
+        date_format: &str,
+        metrics: &[MetricColumnMapping],
+        now_iso: &str,
+    ) -> Result<(), AppError> {
+        let metrics_json = serde_json::to_string(metrics)
+            .map_err(|e| AppError::Database(format!("Failed to serialize demo sensor metrics: {}", e)))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO device_mappings (
+                id, device_name, manufacturer, is_preset, date_col, date_format, metrics_json, created_at
+            ) VALUES (?, ?, ?, 0, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                device_name = excluded.device_name,
+                manufacturer = excluded.manufacturer,
+                metrics_json = excluded.metrics_json
+            "#,
+        )
+        .bind(id)
+        .bind(device_name)
+        .bind(manufacturer)
+        .bind(date_col)
+        .bind(date_format)
+        .bind(&metrics_json)
+        .bind(now_iso)
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
     }
 
     fn get_stage_by_das(das: i64) -> PhenologyStage {

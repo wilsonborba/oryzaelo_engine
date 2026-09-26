@@ -1,30 +1,40 @@
-//! # Oryza-Elo Architecture Guardrail: Device Mapping Domain Model
+//! # Oryza-Elo Architecture Guardrail: Sensor Profile Domain Model
 //!
-//! Device profiles and schema mapping defining column names, physical units,
-//! and scale multipliers for agricultural sensor stations and telemetry loggers.
+//! A registered sensor's column mapping: vendor-specific column names,
+//! physical units, and scale multipliers, per canonical metric it actually
+//! measures. A profile declares 1..5 metrics -- a standalone rain gauge
+//! declares exactly `Rainfall`; a bundled multi-sensor weather station
+//! (Davis Vantage Pro2, Pessl iMetos) declares all 5, matching how these
+//! real commercial products actually report (one combined feed). The schema
+//! never forces a sensor to claim a metric it doesn't physically measure.
 
+use super::metric_type::MetricType;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// Column specification, unit, and scale multiplier for a single sensor variable.
+/// Column specification, unit, and scale multiplier for one metric this
+/// sensor profile reports.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct SensorColumnMapping {
+pub struct MetricColumnMapping {
+    pub metric_type: MetricType,
     pub column_name: String,
     pub unit: String,
     pub scale: f64,
 }
 
-impl SensorColumnMapping {
-    pub fn new(col: impl Into<String>, unit: impl Into<String>, scale: f64) -> Self {
+impl MetricColumnMapping {
+    pub fn new(metric_type: MetricType, column_name: impl Into<String>, unit: impl Into<String>, scale: f64) -> Self {
         Self {
-            column_name: col.into(),
+            metric_type,
+            column_name: column_name.into(),
             unit: unit.into(),
             scale,
         }
     }
 }
 
-/// Device mapping configuration mapping vendor-specific sensor columns to canonical domain variables.
+/// Sensor profile: a physical device (or manual/synthetic source) mapping
+/// its own raw column(s) onto one or more canonical metrics.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeviceMapping {
     pub id: String,
@@ -35,69 +45,72 @@ pub struct DeviceMapping {
     pub date_col: String,
     pub date_format: String,
 
-    pub t_max_col: String,
-    pub t_max_unit: String,
-    pub t_max_scale: f64,
-
-    pub t_min_col: String,
-    pub t_min_unit: String,
-    pub t_min_scale: f64,
-
-    pub rain_col: String,
-    pub rain_unit: String,
-    pub rain_scale: f64,
-
-    pub rad_col: String,
-    pub rad_unit: String,
-    pub rad_scale: f64,
-
-    pub rh_col: String,
-    pub rh_unit: String,
-    pub rh_scale: f64,
+    /// 1..5 entries -- never assumes a sensor reports every canonical metric.
+    pub metrics: Vec<MetricColumnMapping>,
 
     pub created_at: DateTime<Utc>,
 }
 
 impl DeviceMapping {
-    /// Converts a raw temperature measurement into standard Celsius (°C).
-    pub fn convert_temp(&self, raw: f64, is_max: bool) -> f64 {
-        let (unit, scale) = if is_max {
-            (&self.t_max_unit, self.t_max_scale)
-        } else {
-            (&self.t_min_unit, self.t_min_scale)
-        };
-
-        let scaled = raw * scale;
-        match unit.trim().to_uppercase().as_str() {
-            "F" | "FAHRENHEIT" | "DEG_F" => (scaled - 32.0) * 5.0 / 9.0,
-            _ => scaled,
-        }
+    pub fn metric(&self, metric_type: MetricType) -> Option<&MetricColumnMapping> {
+        self.metrics.iter().find(|m| m.metric_type == metric_type)
     }
 
-    /// Converts raw rain into standard daily millimeters (mm).
-    pub fn convert_rain(&self, raw: f64) -> f64 {
-        let scaled = raw * self.rain_scale;
-        match self.rain_unit.trim().to_lowercase().as_str() {
-            "in" | "inch" | "inches" => scaled * 25.4,
-            _ => scaled,
-        }
+    pub fn metric_types(&self) -> Vec<MetricType> {
+        self.metrics.iter().map(|m| m.metric_type).collect()
     }
 
-    /// Converts raw solar radiation into standard cumulative daily MegaJoules per square meter (MJ/m²/day).
-    pub fn convert_radiation(&self, raw: f64) -> f64 {
-        let scaled = raw * self.rad_scale;
-        match self.rad_unit.trim().to_lowercase().as_str() {
-            // Instantaneous or daily mean W/m² integrated over 24 hours (86,400 s / 1e6 = 0.0864 MJ/m²)
-            "w/m2" | "w/m^2" | "watt/m2" => scaled * 0.0864,
-            // Kilowatt-hours per square meter (1 kWh = 3.6 MJ)
-            "kwh/m2" | "kwh/m^2" => scaled * 3.6,
-            _ => scaled,
-        }
+    /// Converts a raw measurement for `metric_type` into its canonical unit
+    /// (°C, mm, MJ/m², or %). Returns the raw*scale value unconverted if the
+    /// unit string isn't a recognized alternate (already-canonical case).
+    pub fn convert(&self, metric_type: MetricType, raw: f64) -> Option<f64> {
+        let m = self.metric(metric_type)?;
+        let scaled = raw * m.scale;
+        let unit = m.unit.trim().to_lowercase();
+
+        Some(match metric_type {
+            MetricType::TMax | MetricType::TMin => match unit.as_str() {
+                "f" | "fahrenheit" | "deg_f" => (scaled - 32.0) * 5.0 / 9.0,
+                _ => scaled,
+            },
+            MetricType::Rainfall => match unit.as_str() {
+                "in" | "inch" | "inches" => scaled * 25.4,
+                _ => scaled,
+            },
+            MetricType::Radiation => match unit.as_str() {
+                // Instantaneous or daily mean W/m² integrated over 24h (86,400s / 1e6 = 0.0864 MJ/m²)
+                "w/m2" | "w/m^2" | "watt/m2" => scaled * 0.0864,
+                // Kilowatt-hours per square meter (1 kWh = 3.6 MJ)
+                "kwh/m2" | "kwh/m^2" => scaled * 3.6,
+                _ => scaled,
+            },
+            MetricType::Humidity => scaled,
+        })
     }
 
-    /// Converts raw relative humidity into percentage [0.0, 100.0].
-    pub fn convert_rh(&self, raw: f64) -> f64 {
-        raw * self.rh_scale
+    /// Convenience constructor for the common real-world case: a standalone
+    /// sensor that only measures one metric (a rain gauge, a pyranometer...).
+    pub fn single_metric(
+        id: impl Into<String>,
+        device_name: impl Into<String>,
+        manufacturer: impl Into<String>,
+        date_col: impl Into<String>,
+        date_format: impl Into<String>,
+        metric_type: MetricType,
+        column_name: impl Into<String>,
+        unit: impl Into<String>,
+        scale: f64,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            device_name: device_name.into(),
+            manufacturer: manufacturer.into(),
+            is_preset: false,
+            date_col: date_col.into(),
+            date_format: date_format.into(),
+            metrics: vec![MetricColumnMapping::new(metric_type, column_name, unit, scale)],
+            created_at: Utc::now(),
+        }
     }
 
     /// Factory preset: Pessl Instruments (iMetos) - Austria / Germany
@@ -109,21 +122,13 @@ impl DeviceMapping {
             is_preset: true,
             date_col: "Timestamp".into(),
             date_format: "%Y-%m-%d".into(),
-            t_max_col: "AirTemp_Max".into(),
-            t_max_unit: "C".into(),
-            t_max_scale: 1.0,
-            t_min_col: "AirTemp_Min".into(),
-            t_min_unit: "C".into(),
-            t_min_scale: 1.0,
-            rain_col: "Precipitation".into(),
-            rain_unit: "mm".into(),
-            rain_scale: 1.0,
-            rad_col: "SolarRad".into(),
-            rad_unit: "W/m2".into(),
-            rad_scale: 1.0,
-            rh_col: "RelHumidity".into(),
-            rh_unit: "%".into(),
-            rh_scale: 1.0,
+            metrics: vec![
+                MetricColumnMapping::new(MetricType::TMax, "AirTemp_Max", "C", 1.0),
+                MetricColumnMapping::new(MetricType::TMin, "AirTemp_Min", "C", 1.0),
+                MetricColumnMapping::new(MetricType::Rainfall, "Precipitation", "mm", 1.0),
+                MetricColumnMapping::new(MetricType::Radiation, "SolarRad", "W/m2", 1.0),
+                MetricColumnMapping::new(MetricType::Humidity, "RelHumidity", "%", 1.0),
+            ],
             created_at: Utc::now(),
         }
     }
@@ -137,21 +142,13 @@ impl DeviceMapping {
             is_preset: true,
             date_col: "date".into(),
             date_format: "%Y-%m-%d".into(),
-            t_max_col: "temp_max_raw".into(),
-            t_max_unit: "C".into(),
-            t_max_scale: 0.1, // Integer e.g. 325 -> 32.5°C
-            t_min_col: "temp_min_raw".into(),
-            t_min_unit: "C".into(),
-            t_min_scale: 0.1, // Integer e.g. 240 -> 24.0°C
-            rain_col: "pulse_count".into(),
-            rain_unit: "mm".into(),
-            rain_scale: 0.2, // Tipping bucket 0.2 mm per pulse
-            rad_col: "radiation_raw".into(),
-            rad_unit: "MJ/m2".into(),
-            rad_scale: 0.1,
-            rh_col: "humidity_raw".into(),
-            rh_unit: "%".into(),
-            rh_scale: 0.1, // Integer e.g. 785 -> 78.5%
+            metrics: vec![
+                MetricColumnMapping::new(MetricType::TMax, "temp_max_raw", "C", 0.1),
+                MetricColumnMapping::new(MetricType::TMin, "temp_min_raw", "C", 0.1),
+                MetricColumnMapping::new(MetricType::Rainfall, "pulse_count", "mm", 0.2),
+                MetricColumnMapping::new(MetricType::Radiation, "radiation_raw", "MJ/m2", 0.1),
+                MetricColumnMapping::new(MetricType::Humidity, "humidity_raw", "%", 0.1),
+            ],
             created_at: Utc::now(),
         }
     }
@@ -165,21 +162,13 @@ impl DeviceMapping {
             is_preset: true,
             date_col: "Date".into(),
             date_format: "%m/%d/%Y".into(),
-            t_max_col: "Temp High".into(),
-            t_max_unit: "F".into(),
-            t_max_scale: 1.0,
-            t_min_col: "Temp Low".into(),
-            t_min_unit: "F".into(),
-            t_min_scale: 1.0,
-            rain_col: "Rain".into(),
-            rain_unit: "in".into(),
-            rain_scale: 1.0, // Will be converted using 25.4 mm/inch
-            rad_col: "Solar Rad".into(),
-            rad_unit: "MJ/m2".into(),
-            rad_scale: 1.0,
-            rh_col: "Hum High".into(),
-            rh_unit: "%".into(),
-            rh_scale: 1.0,
+            metrics: vec![
+                MetricColumnMapping::new(MetricType::TMax, "Temp High", "F", 1.0),
+                MetricColumnMapping::new(MetricType::TMin, "Temp Low", "F", 1.0),
+                MetricColumnMapping::new(MetricType::Rainfall, "Rain", "in", 1.0),
+                MetricColumnMapping::new(MetricType::Radiation, "Solar Rad", "MJ/m2", 1.0),
+                MetricColumnMapping::new(MetricType::Humidity, "Hum High", "%", 1.0),
+            ],
             created_at: Utc::now(),
         }
     }
@@ -193,21 +182,13 @@ impl DeviceMapping {
             is_preset: true,
             date_col: "YEARMODA".into(),
             date_format: "%Y%m%d".into(),
-            t_max_col: "T2M_MAX".into(),
-            t_max_unit: "C".into(),
-            t_max_scale: 1.0,
-            t_min_col: "T2M_MIN".into(),
-            t_min_unit: "C".into(),
-            t_min_scale: 1.0,
-            rain_col: "PRECTOTCORR".into(),
-            rain_unit: "mm".into(),
-            rain_scale: 1.0,
-            rad_col: "ALLSKY_SFC_SW_DWN".into(),
-            rad_unit: "MJ/m2".into(),
-            rad_scale: 1.0,
-            rh_col: "RH2M".into(),
-            rh_unit: "%".into(),
-            rh_scale: 1.0,
+            metrics: vec![
+                MetricColumnMapping::new(MetricType::TMax, "T2M_MAX", "C", 1.0),
+                MetricColumnMapping::new(MetricType::TMin, "T2M_MIN", "C", 1.0),
+                MetricColumnMapping::new(MetricType::Rainfall, "PRECTOTCORR", "mm", 1.0),
+                MetricColumnMapping::new(MetricType::Radiation, "ALLSKY_SFC_SW_DWN", "MJ/m2", 1.0),
+                MetricColumnMapping::new(MetricType::Humidity, "RH2M", "%", 1.0),
+            ],
             created_at: Utc::now(),
         }
     }
@@ -232,11 +213,11 @@ mod tests {
         let davis = DeviceMapping::davis_preset();
 
         // 86°F -> 30°C
-        let t_c = davis.convert_temp(86.0, true);
+        let t_c = davis.convert(MetricType::TMax, 86.0).unwrap();
         assert!((t_c - 30.0).abs() < 1e-4);
 
         // 1.0 inch -> 25.4 mm
-        let rain_mm = davis.convert_rain(1.0);
+        let rain_mm = davis.convert(MetricType::Rainfall, 1.0).unwrap();
         assert!((rain_mm - 25.4).abs() < 1e-4);
     }
 
@@ -245,15 +226,34 @@ mod tests {
         let dragino = DeviceMapping::dragino_renke_preset();
 
         // Raw 325 -> 32.5°C
-        let t_max = dragino.convert_temp(325.0, true);
+        let t_max = dragino.convert(MetricType::TMax, 325.0).unwrap();
         assert!((t_max - 32.5).abs() < 1e-4);
 
         // 15 pulses * 0.2 = 3.0 mm
-        let rain = dragino.convert_rain(15.0);
+        let rain = dragino.convert(MetricType::Rainfall, 15.0).unwrap();
         assert!((rain - 3.0).abs() < 1e-4);
 
         // Raw 815 -> 81.5%
-        let rh = dragino.convert_rh(815.0);
+        let rh = dragino.convert(MetricType::Humidity, 815.0).unwrap();
         assert!((rh - 81.5).abs() < 1e-4);
+    }
+
+    #[test]
+    fn a_standalone_single_metric_sensor_only_declares_the_one_metric_it_measures() {
+        let rain_gauge = DeviceMapping::single_metric(
+            "sensor-rain-01",
+            "Standalone Tipping Bucket Rain Gauge",
+            "Generic LoRaWAN",
+            "ts",
+            "%Y-%m-%d",
+            MetricType::Rainfall,
+            "rain_mm",
+            "mm",
+            1.0,
+        );
+
+        assert_eq!(rain_gauge.metric_types(), vec![MetricType::Rainfall]);
+        assert!(rain_gauge.metric(MetricType::TMax).is_none());
+        assert!(rain_gauge.convert(MetricType::TMax, 10.0).is_none());
     }
 }

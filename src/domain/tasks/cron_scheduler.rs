@@ -135,7 +135,7 @@ impl CronScheduler {
         eval_date: NaiveDate,
     ) -> Result<bool, AppError> {
         let history = weather_repo.get_retrospective(&parcel.id, eval_date, 60).await?;
-        if history.len() < 7 {
+        if history.iter().filter(|r| r.is_complete()).count() < 7 {
             return Ok(false);
         }
 

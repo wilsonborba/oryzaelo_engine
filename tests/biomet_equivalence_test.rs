@@ -58,12 +58,16 @@ fn test_equivalence_against_ground_truth_row() {
 
             records.push(DailyWeatherRecord {
                 date,
-                t_max: max_temp,
-                t_min: min_temp,
-                precipitation_mm: p,
-                radiation_mj_m2: r,
-                relative_humidity_pct: h,
-                source: "NASA_POWER".into(),
+                t_max: Some(max_temp),
+                t_min: Some(min_temp),
+                precipitation_mm: Some(p),
+                radiation_mj_m2: Some(r),
+                relative_humidity_pct: Some(h),
+                t_max_sensor_id: Some("NASA_POWER".into()),
+                t_min_sensor_id: Some("NASA_POWER".into()),
+                rainfall_sensor_id: Some("NASA_POWER".into()),
+                radiation_sensor_id: Some("NASA_POWER".into()),
+                humidity_sensor_id: Some("NASA_POWER".into()),
             });
         }
     }

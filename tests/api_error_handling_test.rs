@@ -322,10 +322,10 @@ async fn analytics_with_insufficient_history_returns_422() {
 
 #[tokio::test]
 async fn create_custom_device_mapping_round_trips_with_frontend_schema_shape() {
-    // Exact JSON shape the Dart `DeviceMapping.toJson()` sends after this
-    // session's schema-mismatch fix — if this ever drifts from the backend
-    // struct again, this test catches it immediately instead of the "add
-    // sensor" button silently failing in production.
+    // Exact JSON shape the Dart `DeviceMapping.toJson()` sends -- if this
+    // ever drifts from the backend struct again, this test catches it
+    // immediately instead of the "add sensor" button silently failing in
+    // production.
     let app = setup_test_app().await;
     let payload = serde_json::json!({
         "id": "custom-lora-01",
@@ -334,11 +334,13 @@ async fn create_custom_device_mapping_round_trips_with_frontend_schema_shape() {
         "is_preset": false,
         "date_col": "date",
         "date_format": "%Y-%m-%d",
-        "t_max_col": "t_max", "t_max_unit": "C", "t_max_scale": 1.0,
-        "t_min_col": "t_min", "t_min_unit": "C", "t_min_scale": 1.0,
-        "rain_col": "rain", "rain_unit": "mm", "rain_scale": 1.0,
-        "rad_col": "rad", "rad_unit": "MJ/m2", "rad_scale": 1.0,
-        "rh_col": "rh", "rh_unit": "%", "rh_scale": 1.0,
+        "metrics": [
+            {"metric_type": "t_max", "column_name": "t_max", "unit": "C", "scale": 1.0},
+            {"metric_type": "t_min", "column_name": "t_min", "unit": "C", "scale": 1.0},
+            {"metric_type": "rainfall", "column_name": "rain", "unit": "mm", "scale": 1.0},
+            {"metric_type": "radiation", "column_name": "rad", "unit": "MJ/m2", "scale": 1.0},
+            {"metric_type": "humidity", "column_name": "rh", "unit": "%", "scale": 1.0},
+        ],
         "created_at": "2026-06-06T00:00:00Z",
     });
 
@@ -370,11 +372,13 @@ async fn custom_mappings_list_excludes_factory_presets() {
     let payload = serde_json::json!({
         "id": "custom-02", "device_name": "Custom 02", "manufacturer": "Custom", "is_preset": false,
         "date_col": "date", "date_format": "%Y-%m-%d",
-        "t_max_col": "t_max", "t_max_unit": "C", "t_max_scale": 1.0,
-        "t_min_col": "t_min", "t_min_unit": "C", "t_min_scale": 1.0,
-        "rain_col": "rain", "rain_unit": "mm", "rain_scale": 1.0,
-        "rad_col": "rad", "rad_unit": "MJ/m2", "rad_scale": 1.0,
-        "rh_col": "rh", "rh_unit": "%", "rh_scale": 1.0,
+        "metrics": [
+            {"metric_type": "t_max", "column_name": "t_max", "unit": "C", "scale": 1.0},
+            {"metric_type": "t_min", "column_name": "t_min", "unit": "C", "scale": 1.0},
+            {"metric_type": "rainfall", "column_name": "rain", "unit": "mm", "scale": 1.0},
+            {"metric_type": "radiation", "column_name": "rad", "unit": "MJ/m2", "scale": 1.0},
+            {"metric_type": "humidity", "column_name": "rh", "unit": "%", "scale": 1.0},
+        ],
         "created_at": "2026-06-06T00:00:00Z",
     });
     let req = Request::builder()
@@ -408,11 +412,9 @@ async fn creating_a_mapping_cannot_overwrite_an_existing_factory_preset() {
         "id": "preset_pessl_imetos",
         "device_name": "HACKED", "manufacturer": "Attacker", "is_preset": true,
         "date_col": "x", "date_format": "%Y-%m-%d",
-        "t_max_col": "x", "t_max_unit": "C", "t_max_scale": 1.0,
-        "t_min_col": "x", "t_min_unit": "C", "t_min_scale": 1.0,
-        "rain_col": "x", "rain_unit": "mm", "rain_scale": 1.0,
-        "rad_col": "x", "rad_unit": "MJ/m2", "rad_scale": 1.0,
-        "rh_col": "x", "rh_unit": "%", "rh_scale": 1.0,
+        "metrics": [
+            {"metric_type": "t_max", "column_name": "x", "unit": "C", "scale": 1.0},
+        ],
         "created_at": "2026-06-06T00:00:00Z",
     });
     let req = Request::builder()
@@ -482,11 +484,9 @@ async fn create_custom_mapping_then_delete_succeeds() {
     let payload = serde_json::json!({
         "id": "custom-delete-me", "device_name": "Temp", "manufacturer": "Custom", "is_preset": false,
         "date_col": "date", "date_format": "%Y-%m-%d",
-        "t_max_col": "t_max", "t_max_unit": "C", "t_max_scale": 1.0,
-        "t_min_col": "t_min", "t_min_unit": "C", "t_min_scale": 1.0,
-        "rain_col": "rain", "rain_unit": "mm", "rain_scale": 1.0,
-        "rad_col": "rad", "rad_unit": "MJ/m2", "rad_scale": 1.0,
-        "rh_col": "rh", "rh_unit": "%", "rh_scale": 1.0,
+        "metrics": [
+            {"metric_type": "t_max", "column_name": "t_max", "unit": "C", "scale": 1.0},
+        ],
         "created_at": "2026-06-06T00:00:00Z",
     });
     let req = Request::builder()

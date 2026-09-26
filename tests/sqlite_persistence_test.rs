@@ -8,7 +8,8 @@ use oryzaelo_engine::dal::database::connection::create_pool;
 use oryzaelo_engine::dal::database::repositories::{
     ConfigRepository, DeviceMappingRepository, ParcelRepository, PredictionRepository, WeatherRepository,
 };
-use oryzaelo_engine::domain::models::device_mapping::DeviceMapping;
+use oryzaelo_engine::domain::models::device_mapping::{DeviceMapping, MetricColumnMapping};
+use oryzaelo_engine::domain::models::metric_type::MetricType;
 use oryzaelo_engine::domain::models::farm::FarmParcel;
 use oryzaelo_engine::domain::models::locale::Locale;
 use oryzaelo_engine::domain::models::phenology::{PhenologyPrediction, PhenologyStage, TechnicalMetrics};
@@ -48,21 +49,13 @@ async fn test_full_sqlite_dal_lifecycle() {
         is_preset: false,
         date_col: "data_leitura".into(),
         date_format: "%Y-%m-%d".into(),
-        t_max_col: "temp_maxima".into(),
-        t_max_unit: "C".into(),
-        t_max_scale: 1.0,
-        t_min_col: "temp_minima".into(),
-        t_min_unit: "C".into(),
-        t_min_scale: 1.0,
-        rain_col: "chuva_mm".into(),
-        rain_unit: "mm".into(),
-        rain_scale: 1.0,
-        rad_col: "radiacao_solar".into(),
-        rad_unit: "MJ/m2".into(),
-        rad_scale: 1.0,
-        rh_col: "umidade_rel".into(),
-        rh_unit: "%".into(),
-        rh_scale: 1.0,
+        metrics: vec![
+            MetricColumnMapping::new(MetricType::TMax, "temp_maxima", "C", 1.0),
+            MetricColumnMapping::new(MetricType::TMin, "temp_minima", "C", 1.0),
+            MetricColumnMapping::new(MetricType::Rainfall, "chuva_mm", "mm", 1.0),
+            MetricColumnMapping::new(MetricType::Radiation, "radiacao_solar", "MJ/m2", 1.0),
+            MetricColumnMapping::new(MetricType::Humidity, "umidade_rel", "%", 1.0),
+        ],
         created_at: Utc::now(),
     };
     device_repo.save(&custom_mapping).await.unwrap();
@@ -104,9 +97,14 @@ async fn test_full_sqlite_dal_lifecycle() {
     assert_eq!(report.successful_rows, 65);
     assert_eq!(report.failed_rows, 0);
 
-    // 6. Batch Insert into WeatherRepository
-    let inserted = weather_repo.insert_batch("talhao-alpha", &report.records).await.unwrap();
-    assert_eq!(inserted, 65);
+    // 6. Persist each parsed reading through the aggregation pipeline
+    for reading in &report.readings {
+        let recorded_at = reading.date.and_hms_opt(12, 0, 0).unwrap().and_utc();
+        weather_repo
+            .record_reading("talhao-alpha", "farmer_custom_station_1", reading.metric_type, reading.value, recorded_at)
+            .await
+            .unwrap();
+    }
 
     // 7. Retrospective Query Performance Benchmark (< 3 ms)
     let eval_date = start_date + chrono::Duration::days(62);

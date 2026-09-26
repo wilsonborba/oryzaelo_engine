@@ -1,86 +1,147 @@
 //! # Oryza-Elo Architecture Guardrail: Weather & Biomet Models
 //!
 //! Daily agrometeorological observations and engineered biometeorological feature vectors.
+//!
+//! Every metric field is nullable: a day is genuinely partial until every
+//! sensor covering this parcel has reported for it (a rain-only sensor and a
+//! temperature-only sensor may report at completely different times). This
+//! is a derived/aggregated view built from `sensor_readings_*` -- never
+//! written to directly by a single ingest call.
 
 use crate::core::error::{DomainError, DomainResult};
+use crate::domain::models::metric_type::MetricType;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-/// Daily agrometeorological ground record from sensors, stations or remote caches.
+/// Daily agrometeorological ground record, aggregated from one or more sensors.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DailyWeatherRecord {
     /// Observation date
     pub date: NaiveDate,
     /// Maximum 2-meter air temperature (°C)
-    pub t_max: f64,
+    pub t_max: Option<f64>,
     /// Minimum 2-meter air temperature (°C)
-    pub t_min: f64,
+    pub t_min: Option<f64>,
     /// Daily cumulative precipitation (mm)
-    pub precipitation_mm: f64,
+    pub precipitation_mm: Option<f64>,
     /// Daily surface all-sky solar radiation (MJ/m²/day)
-    pub radiation_mj_m2: f64,
+    pub radiation_mj_m2: Option<f64>,
     /// Mean 2-meter relative humidity (%)
-    pub relative_humidity_pct: f64,
-    /// Ingestion source (e.g., "Pessl_iMetos", "Davis_VantagePro2", "NASA_POWER", "Dragino_RS485")
-    pub source: String,
+    pub relative_humidity_pct: Option<f64>,
+
+    /// Which sensor last reported each field -- provenance is per-field,
+    /// never a single "source" string for the whole day.
+    pub t_max_sensor_id: Option<String>,
+    pub t_min_sensor_id: Option<String>,
+    pub rainfall_sensor_id: Option<String>,
+    pub radiation_sensor_id: Option<String>,
+    pub humidity_sensor_id: Option<String>,
 }
 
 impl DailyWeatherRecord {
-    /// Validates physical laws and domain invariants.
+    /// True only when every one of the 5 canonical metrics has been reported
+    /// for this day. ML feature engineering (GDD windows, phenology
+    /// inference) only ever consumes complete days.
+    pub fn is_complete(&self) -> bool {
+        self.t_max.is_some()
+            && self.t_min.is_some()
+            && self.precipitation_mm.is_some()
+            && self.radiation_mj_m2.is_some()
+            && self.relative_humidity_pct.is_some()
+    }
+
+    pub fn is_partial(&self) -> bool {
+        !self.is_complete()
+    }
+
+    /// Which of the 5 canonical metrics are still missing for this day, so
+    /// the UI can tell a farmer exactly what's outstanding (e.g. "waiting on
+    /// rainfall") instead of just showing an opaque "incomplete" badge.
+    pub fn missing_metrics(&self) -> Vec<MetricType> {
+        let mut missing = Vec::new();
+        if self.t_max.is_none() {
+            missing.push(MetricType::TMax);
+        }
+        if self.t_min.is_none() {
+            missing.push(MetricType::TMin);
+        }
+        if self.precipitation_mm.is_none() {
+            missing.push(MetricType::Rainfall);
+        }
+        if self.radiation_mj_m2.is_none() {
+            missing.push(MetricType::Radiation);
+        }
+        if self.relative_humidity_pct.is_none() {
+            missing.push(MetricType::Humidity);
+        }
+        missing
+    }
+
+    /// Validates physical laws and domain invariants across whichever
+    /// fields are actually present -- a partial day can't violate a
+    /// cross-field law it doesn't yet have both sides of.
     pub fn validate(&self) -> DomainResult<()> {
-        if self.t_min > self.t_max {
-            return Err(DomainError::InvalidWeatherRecord {
-                message: format!(
-                    "T_min ({:.2}°C) cannot exceed T_max ({:.2}°C) on date {}",
-                    self.t_min, self.t_max, self.date
-                ),
-            });
+        if let (Some(t_min), Some(t_max)) = (self.t_min, self.t_max) {
+            if t_min > t_max {
+                return Err(DomainError::InvalidWeatherRecord {
+                    message: format!(
+                        "T_min ({:.2}°C) cannot exceed T_max ({:.2}°C) on date {}",
+                        t_min, t_max, self.date
+                    ),
+                });
+            }
+            if t_min < -40.0 || t_max > 60.0 {
+                return Err(DomainError::InvalidWeatherRecord {
+                    message: format!(
+                        "Extreme temperature outlier detected: T_min={:.2}°C, T_max={:.2}°C on date {}",
+                        t_min, t_max, self.date
+                    ),
+                });
+            }
         }
-        if self.precipitation_mm < 0.0 {
-            return Err(DomainError::InvalidWeatherRecord {
-                message: format!(
-                    "Precipitation ({:.2} mm) cannot be negative on date {}",
-                    self.precipitation_mm, self.date
-                ),
-            });
+        if let Some(rain) = self.precipitation_mm {
+            if rain < 0.0 {
+                return Err(DomainError::InvalidWeatherRecord {
+                    message: format!("Precipitation ({:.2} mm) cannot be negative on date {}", rain, self.date),
+                });
+            }
         }
-        if self.radiation_mj_m2 < 0.0 {
-            return Err(DomainError::InvalidWeatherRecord {
-                message: format!(
-                    "Solar radiation ({:.2} MJ/m²) cannot be negative on date {}",
-                    self.radiation_mj_m2, self.date
-                ),
-            });
+        if let Some(rad) = self.radiation_mj_m2 {
+            if rad < 0.0 {
+                return Err(DomainError::InvalidWeatherRecord {
+                    message: format!("Solar radiation ({:.2} MJ/m²) cannot be negative on date {}", rad, self.date),
+                });
+            }
         }
-        if !(0.0..=100.0).contains(&self.relative_humidity_pct) {
-            return Err(DomainError::InvalidWeatherRecord {
-                message: format!(
-                    "Relative humidity ({:.1}%) must be within [0.0, 100.0] on date {}",
-                    self.relative_humidity_pct, self.date
-                ),
-            });
-        }
-        if self.t_min < -40.0 || self.t_max > 60.0 {
-            return Err(DomainError::InvalidWeatherRecord {
-                message: format!(
-                    "Extreme temperature outlier detected: T_min={:.2}°C, T_max={:.2}°C on date {}",
-                    self.t_min, self.t_max, self.date
-                ),
-            });
+        if let Some(rh) = self.relative_humidity_pct {
+            if !(0.0..=100.0).contains(&rh) {
+                return Err(DomainError::InvalidWeatherRecord {
+                    message: format!(
+                        "Relative humidity ({:.1}%) must be within [0.0, 100.0] on date {}",
+                        rh, self.date
+                    ),
+                });
+            }
         }
         Ok(())
     }
 
     /// Calculates Growing Degree Days (GDD) for this single day given base temperature.
     /// Formula: GDD = max(0.0, ((T_max + T_min) / 2.0) - T_base)
-    pub fn daily_gdd(&self, base_temp_celsius: f64) -> f64 {
-        let t_mean = (self.t_max + self.t_min) / 2.0;
-        (t_mean - base_temp_celsius).max(0.0)
+    /// `None` unless both T_max and T_min are present for this day.
+    pub fn daily_gdd(&self, base_temp_celsius: f64) -> Option<f64> {
+        let t_max = self.t_max?;
+        let t_min = self.t_min?;
+        let t_mean = (t_max + t_min) / 2.0;
+        Some((t_mean - base_temp_celsius).max(0.0))
     }
 
     /// Calculates Diurnal Temperature Range (DTR) = T_max - T_min.
-    pub fn dtr(&self) -> f64 {
-        (self.t_max - self.t_min).max(0.0)
+    /// `None` unless both T_max and T_min are present for this day.
+    pub fn dtr(&self) -> Option<f64> {
+        let t_max = self.t_max?;
+        let t_min = self.t_min?;
+        Some((t_max - t_min).max(0.0))
     }
 }
 
@@ -202,34 +263,68 @@ impl BiometFeatures {
 mod tests {
     use super::*;
 
+    fn complete_record(date: NaiveDate) -> DailyWeatherRecord {
+        DailyWeatherRecord {
+            date,
+            t_max: Some(32.5),
+            t_min: Some(24.1),
+            precipitation_mm: Some(12.4),
+            radiation_mj_m2: Some(19.8),
+            relative_humidity_pct: Some(78.5),
+            t_max_sensor_id: Some("s1".into()),
+            t_min_sensor_id: Some("s1".into()),
+            rainfall_sensor_id: Some("s2".into()),
+            radiation_sensor_id: Some("s1".into()),
+            humidity_sensor_id: Some("s1".into()),
+        }
+    }
+
     #[test]
     fn test_valid_weather_record() {
-        let record = DailyWeatherRecord {
-            date: NaiveDate::from_ymd_opt(2026, 7, 10).unwrap(),
-            t_max: 32.5,
-            t_min: 24.1,
-            precipitation_mm: 12.4,
-            radiation_mj_m2: 19.8,
-            relative_humidity_pct: 78.5,
-            source: "TestStation".into(),
-        };
+        let record = complete_record(NaiveDate::from_ymd_opt(2026, 7, 10).unwrap());
         assert!(record.validate().is_ok());
-        assert!((record.daily_gdd(10.0) - 18.3).abs() < 1e-4);
-        assert!((record.dtr() - 8.4).abs() < 1e-4);
+        assert!(record.is_complete());
+        assert!((record.daily_gdd(10.0).unwrap() - 18.3).abs() < 1e-4);
+        assert!((record.dtr().unwrap() - 8.4).abs() < 1e-4);
     }
 
     #[test]
     fn test_weather_record_tmin_exceeds_tmax() {
+        let mut record = complete_record(NaiveDate::from_ymd_opt(2026, 7, 10).unwrap());
+        record.t_max = Some(20.0);
+        record.t_min = Some(25.0);
+        assert!(record.validate().is_err());
+    }
+
+    #[test]
+    fn a_partial_day_with_only_rainfall_reported_is_not_complete_and_has_no_gdd() {
         let record = DailyWeatherRecord {
             date: NaiveDate::from_ymd_opt(2026, 7, 10).unwrap(),
-            t_max: 20.0,
-            t_min: 25.0,
-            precipitation_mm: 0.0,
-            radiation_mj_m2: 15.0,
-            relative_humidity_pct: 70.0,
-            source: "CorruptedSensor".into(),
+            t_max: None,
+            t_min: None,
+            precipitation_mm: Some(5.0),
+            radiation_mj_m2: None,
+            relative_humidity_pct: None,
+            t_max_sensor_id: None,
+            t_min_sensor_id: None,
+            rainfall_sensor_id: Some("rain-gauge-01".into()),
+            radiation_sensor_id: None,
+            humidity_sensor_id: None,
         };
-        assert!(record.validate().is_err());
+
+        assert!(record.is_partial());
+        assert!(record.daily_gdd(10.0).is_none());
+        assert!(record.dtr().is_none());
+        assert!(record.validate().is_ok(), "partial data must not fail cross-field checks it can't evaluate");
+        assert_eq!(
+            record.missing_metrics(),
+            vec![
+                MetricType::TMax,
+                MetricType::TMin,
+                MetricType::Radiation,
+                MetricType::Humidity
+            ]
+        );
     }
 
     #[test]

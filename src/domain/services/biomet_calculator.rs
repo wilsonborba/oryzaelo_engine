@@ -40,10 +40,14 @@ impl BiometCalculator {
     ) -> Result<BiometFeatures, AppError> {
         let t_base = base_temp.unwrap_or(RICE_BASE_TEMPERATURE_CELSIUS);
 
-        // Strict Anti-Data-Leakage: retain only records where date <= eval_date
+        // Strict Anti-Data-Leakage: retain only records where date <= eval_date.
+        // Only complete days (every sensor reported) ever enter the ML
+        // feature vector -- a partial day would corrupt a deterministic
+        // window sum/mean, so it's excluded here rather than being fed in
+        // with a fabricated value.
         let mut retrospective: Vec<&DailyWeatherRecord> = weather_history
             .iter()
-            .filter(|rec| rec.date <= eval_date)
+            .filter(|rec| rec.date <= eval_date && rec.is_complete())
             .collect();
 
         if retrospective.len() < 7 {
@@ -173,21 +177,24 @@ impl BiometCalculator {
         let mut dtr_vals = Vec::with_capacity(n);
 
         for &&rec in &slice {
-            let gdd = rec.daily_gdd(t_base);
+            // Safe to unwrap: `retrospective` was already filtered to
+            // complete-only records in `compute()`.
+            let gdd = rec.daily_gdd(t_base).unwrap_or(0.0);
+            let rain = rec.precipitation_mm.unwrap_or(0.0);
             gdd_sum += gdd;
 
-            rain_sum += rec.precipitation_mm;
-            if rec.precipitation_mm > rain_max {
-                rain_max = rec.precipitation_mm;
+            rain_sum += rain;
+            if rain > rain_max {
+                rain_max = rain;
             }
-            if rec.precipitation_mm < 1.0 {
+            if rain < 1.0 {
                 cdd_count += 1.0;
             }
 
-            rad_sum += rec.radiation_mj_m2;
-            rh_sum += rec.relative_humidity_pct;
+            rad_sum += rec.radiation_mj_m2.unwrap_or(0.0);
+            rh_sum += rec.relative_humidity_pct.unwrap_or(0.0);
 
-            dtr_vals.push(rec.dtr());
+            dtr_vals.push(rec.dtr().unwrap_or(0.0));
         }
 
         let gdd_cum = round_2(gdd_sum * scale);
@@ -254,12 +261,16 @@ mod tests {
                 let date = start + chrono::Duration::days(i as i64);
                 DailyWeatherRecord {
                     date,
-                    t_max: 32.0 + (i % 3) as f64,
-                    t_min: 22.0 + (i % 2) as f64,
-                    precipitation_mm: if i % 5 == 0 { 15.0 } else { 0.2 },
-                    radiation_mj_m2: 18.0 + (i % 4) as f64,
-                    relative_humidity_pct: 75.0 + (i % 5) as f64,
-                    source: "Synthetic".into(),
+                    t_max: Some(32.0 + (i % 3) as f64),
+                    t_min: Some(22.0 + (i % 2) as f64),
+                    precipitation_mm: Some(if i % 5 == 0 { 15.0 } else { 0.2 }),
+                    radiation_mj_m2: Some(18.0 + (i % 4) as f64),
+                    relative_humidity_pct: Some(75.0 + (i % 5) as f64),
+                    t_max_sensor_id: Some("synthetic".into()),
+                    t_min_sensor_id: Some("synthetic".into()),
+                    rainfall_sensor_id: Some("synthetic".into()),
+                    radiation_sensor_id: Some("synthetic".into()),
+                    humidity_sensor_id: Some("synthetic".into()),
                 }
             })
             .collect()
@@ -304,12 +315,16 @@ mod tests {
         // Corrupt future record (t > eval_date) with an extreme value
         history.push(DailyWeatherRecord {
             date: eval_date + chrono::Duration::days(1),
-            t_max: 55.0,
-            t_min: 45.0,
-            precipitation_mm: 500.0,
-            radiation_mj_m2: 35.0,
-            relative_humidity_pct: 99.0,
-            source: "FutureLeak".into(),
+            t_max: Some(55.0),
+            t_min: Some(45.0),
+            precipitation_mm: Some(500.0),
+            radiation_mj_m2: Some(35.0),
+            relative_humidity_pct: Some(99.0),
+            t_max_sensor_id: Some("future-leak".into()),
+            t_min_sensor_id: Some("future-leak".into()),
+            rainfall_sensor_id: Some("future-leak".into()),
+            radiation_sensor_id: Some("future-leak".into()),
+            humidity_sensor_id: Some("future-leak".into()),
         });
 
         let feat = BiometCalculator::compute(

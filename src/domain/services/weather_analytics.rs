@@ -79,9 +79,12 @@ impl WeatherAnalyticsService {
         eval_date: NaiveDate,
         window_days: usize,
     ) -> Result<WeatherAnalyticsReport, AppError> {
+        // Statistical aggregation (correlation, radar, alerts) only ever
+        // consumes complete days -- a partial day would silently corrupt a
+        // mean/correlation with a missing-as-zero value.
         let mut slice: Vec<&DailyWeatherRecord> = records
             .iter()
-            .filter(|r| r.date <= eval_date)
+            .filter(|r| r.date <= eval_date && r.is_complete())
             .collect();
 
         if slice.len() < 3 {
@@ -128,19 +131,21 @@ impl WeatherAnalyticsService {
         let mut cdd_count = 0;
 
         for r in records {
-            total_gdd += r.daily_gdd(RICE_BASE_TEMPERATURE_CELSIUS);
-            total_rain += r.precipitation_mm;
-            if r.precipitation_mm > max_rain {
-                max_rain = r.precipitation_mm;
+            // Safe to unwrap: the caller already filtered to complete-only records.
+            let rain = r.precipitation_mm.unwrap_or(0.0);
+            total_gdd += r.daily_gdd(RICE_BASE_TEMPERATURE_CELSIUS).unwrap_or(0.0);
+            total_rain += rain;
+            if rain > max_rain {
+                max_rain = rain;
             }
-            if r.precipitation_mm < 1.0 {
+            if rain < 1.0 {
                 cdd_count += 1;
             }
-            sum_t_max += r.t_max;
-            sum_t_min += r.t_min;
-            sum_dtr += r.dtr();
-            sum_rad += r.radiation_mj_m2;
-            sum_rh += r.relative_humidity_pct;
+            sum_t_max += r.t_max.unwrap_or(0.0);
+            sum_t_min += r.t_min.unwrap_or(0.0);
+            sum_dtr += r.dtr().unwrap_or(0.0);
+            sum_rad += r.radiation_mj_m2.unwrap_or(0.0);
+            sum_rh += r.relative_humidity_pct.unwrap_or(0.0);
         }
 
         BiometSummary {
@@ -169,12 +174,12 @@ impl WeatherAnalyticsService {
         ];
 
         let series: Vec<Vec<f64>> = vec![
-            records.iter().map(|r| r.t_max).collect(),
-            records.iter().map(|r| r.t_min).collect(),
-            records.iter().map(|r| r.dtr()).collect(),
-            records.iter().map(|r| r.precipitation_mm).collect(),
-            records.iter().map(|r| r.radiation_mj_m2).collect(),
-            records.iter().map(|r| r.relative_humidity_pct).collect(),
+            records.iter().map(|r| r.t_max.unwrap_or(0.0)).collect(),
+            records.iter().map(|r| r.t_min.unwrap_or(0.0)).collect(),
+            records.iter().map(|r| r.dtr().unwrap_or(0.0)).collect(),
+            records.iter().map(|r| r.precipitation_mm.unwrap_or(0.0)).collect(),
+            records.iter().map(|r| r.radiation_mj_m2.unwrap_or(0.0)).collect(),
+            records.iter().map(|r| r.relative_humidity_pct.unwrap_or(0.0)).collect(),
         ];
 
         let num_vars = variables.len();
@@ -482,12 +487,16 @@ mod tests {
         (0..15)
             .map(|i| DailyWeatherRecord {
                 date: base_date + chrono::Duration::days(i),
-                t_max: 33.0 + (i as f64 * 0.2),
-                t_min: 23.0 + (i as f64 * 0.1),
-                precipitation_mm: if i % 4 == 0 { 20.0 } else { 0.0 },
-                radiation_mj_m2: 18.0 + (i as f64 * 0.3),
-                relative_humidity_pct: 80.0 + (i as f64 * 0.5),
-                source: "TestStation".into(),
+                t_max: Some(33.0 + (i as f64 * 0.2)),
+                t_min: Some(23.0 + (i as f64 * 0.1)),
+                precipitation_mm: Some(if i % 4 == 0 { 20.0 } else { 0.0 }),
+                radiation_mj_m2: Some(18.0 + (i as f64 * 0.3)),
+                relative_humidity_pct: Some(80.0 + (i as f64 * 0.5)),
+                t_max_sensor_id: Some("test".into()),
+                t_min_sensor_id: Some("test".into()),
+                rainfall_sensor_id: Some("test".into()),
+                radiation_sensor_id: Some("test".into()),
+                humidity_sensor_id: Some("test".into()),
             })
             .collect()
     }

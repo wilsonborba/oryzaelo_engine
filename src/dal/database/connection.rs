@@ -86,48 +86,22 @@ pub async fn seed_factory_presets(pool: &SqlitePool) -> Result<(), AppError> {
     let presets = DeviceMapping::all_presets();
 
     for p in presets {
+        let metrics_json = serde_json::to_string(&p.metrics)
+            .map_err(|e| AppError::Database(format!("Failed to serialize preset metrics: {}", e)))?;
+
         sqlx::query(
             r#"
             INSERT INTO device_mappings (
                 id, device_name, manufacturer, is_preset,
-                date_col, date_format,
-                t_max_col, t_max_unit, t_max_scale,
-                t_min_col, t_min_unit, t_min_scale,
-                rain_col, rain_unit, rain_scale,
-                rad_col, rad_unit, rad_scale,
-                rh_col, rh_unit, rh_scale,
-                created_at
-            ) VALUES (
-                ?, ?, ?, ?,
-                ?, ?,
-                ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?,
-                ?
-            )
+                date_col, date_format, metrics_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 device_name = excluded.device_name,
                 manufacturer = excluded.manufacturer,
                 is_preset = excluded.is_preset,
                 date_col = excluded.date_col,
                 date_format = excluded.date_format,
-                t_max_col = excluded.t_max_col,
-                t_max_unit = excluded.t_max_unit,
-                t_max_scale = excluded.t_max_scale,
-                t_min_col = excluded.t_min_col,
-                t_min_unit = excluded.t_min_unit,
-                t_min_scale = excluded.t_min_scale,
-                rain_col = excluded.rain_col,
-                rain_unit = excluded.rain_unit,
-                rain_scale = excluded.rain_scale,
-                rad_col = excluded.rad_col,
-                rad_unit = excluded.rad_unit,
-                rad_scale = excluded.rad_scale,
-                rh_col = excluded.rh_col,
-                rh_unit = excluded.rh_unit,
-                rh_scale = excluded.rh_scale
+                metrics_json = excluded.metrics_json
             "#,
         )
         .bind(&p.id)
@@ -136,21 +110,7 @@ pub async fn seed_factory_presets(pool: &SqlitePool) -> Result<(), AppError> {
         .bind(if p.is_preset { 1 } else { 0 })
         .bind(&p.date_col)
         .bind(&p.date_format)
-        .bind(&p.t_max_col)
-        .bind(&p.t_max_unit)
-        .bind(p.t_max_scale)
-        .bind(&p.t_min_col)
-        .bind(&p.t_min_unit)
-        .bind(p.t_min_scale)
-        .bind(&p.rain_col)
-        .bind(&p.rain_unit)
-        .bind(p.rain_scale)
-        .bind(&p.rad_col)
-        .bind(&p.rad_unit)
-        .bind(p.rad_scale)
-        .bind(&p.rh_col)
-        .bind(&p.rh_unit)
-        .bind(p.rh_scale)
+        .bind(&metrics_json)
         .bind(p.created_at.to_rfc3339())
         .execute(pool)
         .await

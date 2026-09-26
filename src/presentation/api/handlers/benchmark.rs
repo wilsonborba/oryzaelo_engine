@@ -137,12 +137,16 @@ fn generate_synthetic_weather_history(days: usize) -> Vec<DailyWeatherRecord> {
             let date = start_date + chrono::Duration::days(i as i64);
             DailyWeatherRecord {
                 date,
-                t_max: 33.0 + ((i % 3) as f64 * 0.5),
-                t_min: 23.0 + ((i % 2) as f64 * 0.5),
-                precipitation_mm: if i % 5 == 0 { 12.0 } else { 0.0 },
-                radiation_mj_m2: 19.5 + ((i % 4) as f64 * 0.8),
-                relative_humidity_pct: 78.0 + ((i % 5) as f64 * 1.0),
-                source: "Benchmark_Synthetic".to_string(),
+                t_max: Some(33.0 + ((i % 3) as f64 * 0.5)),
+                t_min: Some(23.0 + ((i % 2) as f64 * 0.5)),
+                precipitation_mm: Some(if i % 5 == 0 { 12.0 } else { 0.0 }),
+                radiation_mj_m2: Some(19.5 + ((i % 4) as f64 * 0.8)),
+                relative_humidity_pct: Some(78.0 + ((i % 5) as f64 * 1.0)),
+                t_max_sensor_id: Some("benchmark".into()),
+                t_min_sensor_id: Some("benchmark".into()),
+                rainfall_sensor_id: Some("benchmark".into()),
+                radiation_sensor_id: Some("benchmark".into()),
+                humidity_sensor_id: Some("benchmark".into()),
             }
         })
         .collect()

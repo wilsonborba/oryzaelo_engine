@@ -45,6 +45,15 @@ pub fn create_router(state: AppState) -> Router {
         .route("/weather/upload-csv", post(weather::upload_csv_multipart))
         .route("/weather/ingest", post(weather::ingest_csv_json))
         .route("/weather/record", post(weather::ingest_single_record))
+        .route("/weather/sensor-reading", post(weather::ingest_sensor_reading))
+        .route(
+            "/weather/sensor-readings",
+            get(weather::list_sensor_readings),
+        )
+        .route(
+            "/weather/sensor-readings/:id",
+            axum::routing::delete(weather::delete_sensor_reading),
+        )
         .route("/weather/records", get(weather::get_records).delete(weather::delete_records))
         .route("/weather/history", get(weather::get_records))
         .route("/weather/analytics", get(weather::get_weather_analytics))
