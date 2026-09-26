@@ -21,6 +21,7 @@ pub struct MockDataSummary {
     pub message: String,
     pub parcels_count: usize,
     pub weather_records_count: usize,
+    pub sensor_readings_count: usize,
     pub predictions_count: usize,
     pub device_mappings_count: usize,
     pub config_entries_count: usize,
@@ -32,6 +33,7 @@ pub struct MockCleanSummary {
     pub message: String,
     pub parcels_remaining: usize,
     pub weather_records_remaining: usize,
+    pub sensor_readings_remaining: usize,
     pub predictions_remaining: usize,
     pub device_mappings_remaining: usize,
 }
@@ -180,6 +182,17 @@ impl MockDataService {
                 "W/m2",
                 0.0864,
             ),
+            (
+                "sensor_termohigrometro_talhao",
+                "Termo-Higrômetro Digital de Campo (SHT31)",
+                "Sensirion / LoRaWAN",
+                "ts",
+                "%Y-%m-%d %H:%M:%S",
+                MetricType::TMax,
+                "temp_c",
+                "C",
+                1.0,
+            ),
         ];
 
         for s in &standalone_sensors {
@@ -298,9 +311,7 @@ impl MockDataService {
                 let rh = (rh.min(100.0) * 10.0).round() / 10.0;
                 let recorded_at = format!("{}T12:00:00Z", rec_iso);
 
-                // Seed each metric into its OWN reading table (this is the
-                // real per-sensor data the CRUD screens browse), tagged with
-                // the parcel's assigned bundled station id as provenance.
+                // 1. Primary bundled station readings (sync at 12:00:00Z)
                 for (table, value) in [
                     ("sensor_readings_t_max", t_max),
                     ("sensor_readings_t_min", t_min),
@@ -322,8 +333,104 @@ impl MockDataService {
                         .map_err(|e| AppError::Database(e.to_string()))?;
                 }
 
-                // Aggregate row: since every metric was just seeded together,
-                // this day is complete by construction.
+                // 2. Standalone Rain Gauge (sensor_pluviometro_avulso):
+                // Reports at 06:30:00Z and 18:45:00Z with sub-daily precipitation
+                let rain_morn = if is_rain { ((precip * 0.45) * 10.0).round() / 10.0 } else { 0.0 };
+                let rain_eve = if is_rain { ((precip * 0.55) * 10.0).round() / 10.0 } else { 0.0 };
+                for (time_str, val) in [
+                    (format!("{}T06:30:00Z", rec_iso), rain_morn),
+                    (format!("{}T18:45:00Z", rec_iso), rain_eve),
+                ] {
+                    sqlx::query(
+                        "INSERT INTO sensor_readings_rainfall (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                    )
+                    .bind(p.id)
+                    .bind("sensor_pluviometro_avulso")
+                    .bind(val)
+                    .bind(&time_str)
+                    .bind(&now_iso)
+                    .execute(pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+                }
+
+                // 3. Standalone Solar Pyranometer (sensor_piranometro_avulso):
+                // Reports at 09:15:00Z and 14:30:00Z
+                let rad_morn = ((rad * 0.42) * 10.0).round() / 10.0;
+                let rad_aft = ((rad * 0.95) * 10.0).round() / 10.0;
+                for (time_str, val) in [
+                    (format!("{}T09:15:00Z", rec_iso), rad_morn),
+                    (format!("{}T14:30:00Z", rec_iso), rad_aft),
+                ] {
+                    sqlx::query(
+                        "INSERT INTO sensor_readings_radiation (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                    )
+                    .bind(p.id)
+                    .bind("sensor_piranometro_avulso")
+                    .bind(val)
+                    .bind(&time_str)
+                    .bind(&now_iso)
+                    .execute(pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+                }
+
+                // 4. Digital Field Thermo-Hygrometer (sensor_termohigrometro_talhao):
+                // Reports early morning minimum temp + humidity, and afternoon peak temp + humidity
+                let morn_time = format!("{}T05:30:00Z", rec_iso);
+                let aft_time = format!("{}T15:00:00Z", rec_iso);
+                let rh_morn = ((rh * 1.08).min(99.0) * 10.0).round() / 10.0;
+                let rh_aft = ((rh * 0.82).max(35.0) * 10.0).round() / 10.0;
+
+                sqlx::query(
+                    "INSERT INTO sensor_readings_t_min (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                )
+                .bind(p.id)
+                .bind("sensor_termohigrometro_talhao")
+                .bind(t_min)
+                .bind(&morn_time)
+                .bind(&now_iso)
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+                sqlx::query(
+                    "INSERT INTO sensor_readings_humidity (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                )
+                .bind(p.id)
+                .bind("sensor_termohigrometro_talhao")
+                .bind(rh_morn)
+                .bind(&morn_time)
+                .bind(&now_iso)
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+                sqlx::query(
+                    "INSERT INTO sensor_readings_t_max (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                )
+                .bind(p.id)
+                .bind("sensor_termohigrometro_talhao")
+                .bind(t_max)
+                .bind(&aft_time)
+                .bind(&now_iso)
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+                sqlx::query(
+                    "INSERT INTO sensor_readings_humidity (parcel_id, sensor_id, value, recorded_at, received_at) VALUES (?, ?, ?, ?, ?)"
+                )
+                .bind(p.id)
+                .bind("sensor_termohigrometro_talhao")
+                .bind(rh_aft)
+                .bind(&aft_time)
+                .bind(&now_iso)
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+                // Aggregate row with multi-sensor provenance
                 sqlx::query(
                     r#"
                     INSERT INTO weather_records (
@@ -355,9 +462,9 @@ impl MockDataService {
                 .bind(rad)
                 .bind(rh)
                 .bind(p.source)
-                .bind(p.source)
-                .bind(p.source)
-                .bind(p.source)
+                .bind("sensor_termohigrometro_talhao")
+                .bind("sensor_pluviometro_avulso")
+                .bind("sensor_piranometro_avulso")
                 .bind(p.source)
                 .bind(&now_iso)
                 .execute(pool)
@@ -433,14 +540,27 @@ impl MockDataService {
         let row_d: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM device_mappings").fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
         let row_c: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM edge_config").fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
 
+        let mut total_sensor_readings: i64 = 0;
+        for table in [
+            "sensor_readings_t_max",
+            "sensor_readings_t_min",
+            "sensor_readings_rainfall",
+            "sensor_readings_radiation",
+            "sensor_readings_humidity",
+        ] {
+            let row_s: (i64,) = sqlx::query_as(&format!("SELECT COUNT(*) FROM {table}")).fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
+            total_sensor_readings += row_s.0;
+        }
+
         Ok(MockDataSummary {
             status: "success".to_string(),
             message: format!(
-                "Base de borda populada com sucesso: {} talhões, {} registros climáticos e {} predições.",
-                row_p.0, row_w.0, row_h.0
+                "Base de borda populada com sucesso: {} talhões, {} registros climáticos, {} leituras de sensores e {} predições.",
+                row_p.0, row_w.0, total_sensor_readings, row_h.0
             ),
             parcels_count: row_p.0 as usize,
             weather_records_count: row_w.0 as usize,
+            sensor_readings_count: total_sensor_readings as usize,
             predictions_count: row_h.0 as usize,
             device_mappings_count: row_d.0 as usize,
             config_entries_count: row_c.0 as usize,
@@ -464,6 +584,7 @@ impl MockDataService {
 
         if reset_presets {
             sqlx::query("DELETE FROM device_mappings;").execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
+            crate::dal::database::connection::seed_factory_presets(pool).await?;
         } else {
             sqlx::query("DELETE FROM device_mappings WHERE is_preset = 0;").execute(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
         }
@@ -476,11 +597,24 @@ impl MockDataService {
         let row_h: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM prediction_history").fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
         let row_d: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM device_mappings").fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
 
+        let mut sensor_readings_remaining = 0;
+        for table in [
+            "sensor_readings_t_max",
+            "sensor_readings_t_min",
+            "sensor_readings_rainfall",
+            "sensor_readings_radiation",
+            "sensor_readings_humidity",
+        ] {
+            let row_s: (i64,) = sqlx::query_as(&format!("SELECT COUNT(*) FROM {table}")).fetch_one(pool).await.map_err(|e| AppError::Database(e.to_string()))?;
+            sensor_readings_remaining += row_s.0 as usize;
+        }
+
         Ok(MockCleanSummary {
             status: "success".to_string(),
             message: "Banco de dados limpo com sucesso. Presets oficiais preservados.".to_string(),
             parcels_remaining: row_p.0 as usize,
             weather_records_remaining: row_w.0 as usize,
+            sensor_readings_remaining,
             predictions_remaining: row_h.0 as usize,
             device_mappings_remaining: row_d.0 as usize,
         })
@@ -584,11 +718,13 @@ mod tests {
         let pop = MockDataService::populate(&pool, Some(30), Some(2)).await.unwrap();
         assert_eq!(pop.parcels_count, 2);
         assert!(pop.weather_records_count > 30);
+        assert!(pop.sensor_readings_count > pop.weather_records_count);
         assert!(pop.predictions_count > 0);
 
         let clean = MockDataService::clean(&pool, false).await.unwrap();
         assert_eq!(clean.parcels_remaining, 0);
         assert_eq!(clean.weather_records_remaining, 0);
+        assert_eq!(clean.sensor_readings_remaining, 0);
         assert_eq!(clean.predictions_remaining, 0);
         assert_eq!(clean.device_mappings_remaining, 4, "Must keep 4 factory presets");
     }
