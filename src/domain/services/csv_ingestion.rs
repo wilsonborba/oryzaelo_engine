@@ -330,4 +330,117 @@ Timestamp,WrongCol,AirTemp_Min,Precipitation,SolarRad,RelHumidity
 
         assert!(err.to_string().contains("Missing column 'AirTemp_Max'"));
     }
+
+    #[test]
+    fn test_ingestion_rejects_non_numeric_value() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+2026-07-01,not_a_number,23.2,5.4,210.0,78.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.successful_rows, 0);
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("unable to parse numeric value 'not_a_number'"));
+    }
+
+    #[test]
+    fn test_ingestion_rejects_missing_numeric_value() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+2026-07-01,,23.2,5.4,210.0,78.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("missing or empty value for required field 'T_max'"));
+    }
+
+    #[test]
+    fn test_ingestion_rejects_missing_date() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+,31.5,23.2,5.4,210.0,78.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("missing or empty date value"));
+    }
+
+    #[test]
+    fn test_ingestion_rejects_unparseable_date() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+not-a-date,31.5,23.2,5.4,210.0,78.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("unable to parse date"));
+    }
+
+    #[test]
+    fn test_ingestion_rejects_extreme_temperature_outside_biological_threshold() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+2026-07-01,60.0,58.0,0.0,15.0,75.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("biological threshold exceeded"));
+    }
+
+    #[test]
+    fn test_ingestion_negative_radiation_rejected() {
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+2026-07-01,30.0,20.0,0.0,-5.0,75.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.failed_rows, 1);
+        assert!(report.errors[0].contains("solar radiation cannot be negative"));
+    }
+
+    #[test]
+    fn test_ingestion_partial_batch_mixes_valid_and_invalid_rows() {
+        // A realistic upload: some rows clean, some broken in different ways.
+        // successful_rows/failed_rows must reflect an accurate per-row split,
+        // not fail (or succeed) the whole batch on the first bad row.
+        let csv_data = "\
+Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity
+2026-07-01,31.5,23.2,5.4,210.0,78.0
+2026-07-02,bad_value,23.2,5.4,210.0,78.0
+2026-07-03,32.0,24.0,0.0,225.0,74.5
+,30.0,20.0,0.0,200.0,70.0
+2026-07-05,20.0,25.0,0.0,200.0,70.0
+";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.total_rows, 5);
+        assert_eq!(report.successful_rows, 2);
+        assert_eq!(report.failed_rows, 3);
+        // Successful rows are still sorted chronologically.
+        assert!(report.records[0].date < report.records[1].date);
+    }
+
+    #[test]
+    fn test_ingestion_empty_csv_body_yields_zero_rows_not_an_error() {
+        let csv_data = "Timestamp,AirTemp_Max,AirTemp_Min,Precipitation,SolarRad,RelHumidity\n";
+        let mapping = DeviceMapping::pessl_preset();
+        let report = CsvIngestionService::parse_csv(csv_data, &mapping).unwrap();
+
+        assert_eq!(report.total_rows, 0);
+        assert_eq!(report.successful_rows, 0);
+        assert_eq!(report.failed_rows, 0);
+    }
 }

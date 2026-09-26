@@ -63,6 +63,18 @@ async fn test_full_api_e2e_lifecycle() {
     let sys_json: Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(sys_json["status"], "healthy");
     assert_eq!(sys_json["scope"], "system");
+    // Locks the exact wire contract the frontend's SystemHealth model parses.
+    // A prior bug: the frontend expected these keys but the backend never
+    // sent them, so the HUD silently rendered fake demo numbers on every
+    // machine. These must always be present and reflect the real host.
+    assert!(sys_json["os"].is_string());
+    assert!(sys_json["arch"].is_string());
+    assert!(sys_json["cpu_cores"].as_u64().unwrap() >= 1);
+    assert!(sys_json["cpu_usage_pct"].is_number());
+    assert!(sys_json["ram_total_mb"].as_u64().unwrap() > 0);
+    assert!(sys_json["ram_used_mb"].is_number());
+    assert!(sys_json["ram_usage_pct"].is_number());
+    assert!(sys_json["disk_usage_pct"].is_number());
 
     // 1c. Application Health (/api/v1/health/app)
     let req = Request::builder()

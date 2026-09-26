@@ -3,7 +3,9 @@
 //! Autonomous background scheduler evaluating phenological progression for all parcels daily.
 
 use crate::core::error::AppError;
-use crate::dal::database::repositories::{ParcelRepository, PredictionRepository, WeatherRepository};
+use crate::dal::database::repositories::{
+    ConfigRepository, ParcelRepository, PredictionRepository, WeatherRepository,
+};
 use crate::dal::inference::onnx_engine::{CategoricalEncoder, OnnxInferenceEngine};
 use crate::domain::models::farm::FarmParcel;
 use crate::domain::models::locale::Locale;
@@ -15,20 +17,56 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info, warn};
 
+/// Config-store key the farmer can set from the dashboard's Settings screen
+/// to move the nightly evaluation window off the 23:59 default. Matches the
+/// key name the demo seeder (`mock_data.rs`) already pre-populates — there
+/// was no need for a second, parallel key for the same concept.
+pub const CRON_TARGET_TIME_CONFIG_KEY: &str = "cron_time";
+pub const DEFAULT_CRON_TARGET_TIME: &str = "23:59";
+
+/// Parses a config-stored "HH:MM" string into (hour, minute), falling back to
+/// the default whenever the value is absent or malformed — the scheduler must
+/// never panic or stall just because someone wrote garbage into the config
+/// store directly (the API layer validates on write, but this is the last
+/// line of defense for a background loop that must keep running).
+pub fn parse_target_time(raw: Option<&str>) -> (u32, u32) {
+    let fallback = || {
+        let mut parts = DEFAULT_CRON_TARGET_TIME.split(':');
+        let h: u32 = parts.next().unwrap().parse().unwrap();
+        let m: u32 = parts.next().unwrap().parse().unwrap();
+        (h, m)
+    };
+
+    let Some(raw) = raw else { return fallback() };
+    let mut parts = raw.split(':');
+    let (Some(h_str), Some(m_str), None) = (parts.next(), parts.next(), parts.next()) else {
+        return fallback();
+    };
+    match (h_str.parse::<u32>(), m_str.parse::<u32>()) {
+        (Ok(h), Ok(m)) if h < 24 && m < 60 => (h, m),
+        _ => fallback(),
+    }
+}
+
 pub struct CronScheduler;
 
 impl CronScheduler {
     /// Spawns the background scheduler thread inside the Tokio runtime.
+    ///
+    /// The target evaluation time is re-read from `config_repo` on every tick
+    /// (cheap: one indexed SQLite lookup every 30s) so a farmer changing it
+    /// from the Settings screen takes effect immediately, with no restart.
     pub fn spawn(
         parcel_repo: ParcelRepository,
         weather_repo: WeatherRepository,
         prediction_repo: PredictionRepository,
         onnx_engine: Arc<OnnxInferenceEngine>,
+        config_repo: ConfigRepository,
     ) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
-            info!("Iniciando Nightly Cron Scheduler de borda (Alvo diário: 23:59)...");
+            info!("Iniciando Nightly Cron Scheduler de borda (Alvo padrão: {DEFAULT_CRON_TARGET_TIME})...");
 
-            // Resilient recovery: check if machine was turned off during previous 23:59 cycles
+            // Resilient recovery: check if machine was turned off during previous scheduled cycles
             if let Err(e) = Self::recover_missing_days(&parcel_repo, &weather_repo, &prediction_repo, &onnx_engine).await {
                 warn!(error = %e, "Aviso durante recuperação de avaliações fenológicas pendentes no boot");
             }
@@ -44,14 +82,18 @@ impl CronScheduler {
                 let hour = now_local.hour();
                 let minute = now_local.minute();
 
-                // Trigger at 23:59 if not already executed today
-                let should_run = (hour == 23 && minute >= 59)
+                let target_raw = config_repo.get(CRON_TARGET_TIME_CONFIG_KEY).await.ok().flatten();
+                let (target_hour, target_minute) = parse_target_time(target_raw.as_deref());
+
+                // Trigger once per day, at or after the configured target time
+                let should_run = (hour > target_hour || (hour == target_hour && minute >= target_minute))
                     && (last_executed_date != Some(current_date));
 
                 if should_run {
                     info!(
                         date = %current_date,
-                        "Disparando rotina noturna de avaliação fenológica autônoma (23:59)..."
+                        target = format!("{:02}:{:02}", target_hour, target_minute),
+                        "Disparando rotina noturna de avaliação fenológica autônoma..."
                     );
 
                     match Self::execute_evaluation_for_all_parcels(
@@ -233,5 +275,32 @@ impl CronScheduler {
         }
 
         Ok(processed)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_a_valid_hh_mm_string() {
+        assert_eq!(parse_target_time(Some("06:30")), (6, 30));
+        assert_eq!(parse_target_time(Some("00:00")), (0, 0));
+        assert_eq!(parse_target_time(Some("23:59")), (23, 59));
+    }
+
+    #[test]
+    fn falls_back_to_default_when_absent() {
+        assert_eq!(parse_target_time(None), (23, 59));
+    }
+
+    #[test]
+    fn falls_back_to_default_on_malformed_input() {
+        assert_eq!(parse_target_time(Some("garbage")), (23, 59));
+        assert_eq!(parse_target_time(Some("25:00")), (23, 59));
+        assert_eq!(parse_target_time(Some("10:60")), (23, 59));
+        assert_eq!(parse_target_time(Some("10")), (23, 59));
+        assert_eq!(parse_target_time(Some("10:30:00")), (23, 59));
+        assert_eq!(parse_target_time(Some("")), (23, 59));
     }
 }

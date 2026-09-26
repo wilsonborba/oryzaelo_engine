@@ -39,12 +39,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 4. Build application state
     let state = AppState::new(pool.clone(), onnx_engine.clone(), settings);
 
-    // 5. Spawn background Nightly Cron Scheduler (23:59)
+    // 5. Spawn background Nightly Cron Scheduler (target time configurable via
+    //    /api/v1/config, defaulting to 23:59)
     CronScheduler::spawn(
         state.parcel_repo.clone(),
         state.weather_repo.clone(),
         state.prediction_repo.clone(),
         onnx_engine,
+        state.config_repo.clone(),
     );
 
     // 6. Build HTTP Router (with conditional ServeDir for Flutter Web)

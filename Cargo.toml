@@ -22,6 +22,7 @@ csv = "1.3"
 uuid = { version = "1.8", features = ["v4", "serde"] }
 ort = { version = "2.0.0-rc.13", features = ["ndarray", "download-binaries", "tls-native"] }
 ndarray = "0.17.2"
+sysinfo = "0.32"
 
 [[bin]]
 name = "oryzaelo_engine"
