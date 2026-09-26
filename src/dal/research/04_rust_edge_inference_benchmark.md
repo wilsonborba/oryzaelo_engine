@@ -8,12 +8,12 @@ O benchmark foi executado em ambiente CPU com 1.000 iterações unitárias após
 
 | Métrica | Valor Obtido (Rust + ONNX) | Meta Borda Rust | Teto Orientador (USP/ESALQ) | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Latência Média** | **21.834 µs (0.0218 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado (229.0x mais rápido)** |
-| **Mediana (p50)** | **21.495 µs (0.0215 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Percentil 95 (p95)** | **22.530 µs (0.0225 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Percentil 99 (p99)** | **26.589 µs (0.0266 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
-| **Mínimo Absoluto** | **20.983 µs** | - | - | - |
-| **Máximo Absoluto** | **99.394 µs** | - | - | - |
+| **Latência Média** | **20.889 µs (0.0209 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado (239.4x mais rápido)** |
+| **Mediana (p50)** | **20.599 µs (0.0206 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Percentil 95 (p95)** | **22.840 µs (0.0228 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Percentil 99 (p99)** | **25.144 µs (0.0251 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
+| **Mínimo Absoluto** | **20.250 µs** | - | - | - |
+| **Máximo Absoluto** | **28.560 µs** | - | - | - |
 
 ## 2. Arquitetura do Tensor de Borda
 
@@ -31,4 +31,4 @@ O modelo consome estritamente um tensor unidimensional com formato `[1, 44]` de 
 
 ## 4. Conclusão para a Tese de Doutorado / Dissertação
 
-Os resultados confirmam que a substituição de pipelines interpretados em Python por executáveis compilados em Rust com ONNX Runtime C ABI reduz a latência de inferência por predição para o patamar submilissegundo (~21.8 µs), viabilizando previsões fenológicas e geração de recomendações agronômicas instantâneas na borda rural, mesmo sob hardware de baixo custo e restrição energética severa.
+Os resultados confirmam que a substituição de pipelines interpretados em Python por executáveis compilados em Rust com ONNX Runtime C ABI reduz a latência de inferência por predição para o patamar submilissegundo (~20.9 µs), viabilizando previsões fenológicas e geração de recomendações agronômicas instantâneas na borda rural, mesmo sob hardware de baixo custo e restrição energética severa.

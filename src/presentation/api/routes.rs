@@ -3,7 +3,7 @@
 //! Route registration, middlewares and fallback static service mounting.
 
 use crate::presentation::api::handlers::{
-    admin, benchmark, config, devices, health, parcels, phenology, weather,
+    admin, benchmark, config, devices, docs, health, parcels, phenology, weather,
 };
 use crate::presentation::api::state::AppState;
 use axum::routing::{get, post};
@@ -71,13 +71,22 @@ pub fn create_router(state: AppState) -> Router {
         .route("/benchmarks/throughput", get(benchmark::run_throughput_benchmark))
         // Admin & Mock Data (Turnkey Testing for Evaluators and Farmers)
         .route("/admin/populate", post(admin::populate_mock_data))
-        .route("/admin/clean", post(admin::clean_mock_data));
-
+        .route("/admin/clean", post(admin::clean_mock_data))
+        // API Documentation (OpenAPI 3.1 & Scalar)
+        .route("/openapi.json", get(docs::openapi_json_handler))
+        .route("/docs", get(docs::scalar_docs_handler))
+        .route("/scalar", get(docs::scalar_docs_handler))
+        .route("/swagger", get(docs::scalar_docs_handler));
 
     let mut router = Router::new()
         // Root Liveness Ping (Infrastructure, Docker, systemd)
         .route("/health", get(health::liveness_ping))
         .route("/ping", get(health::liveness_ping))
+        // Documentation Root Routes (Scalar + OpenAPI Spec)
+        .route("/docs", get(docs::scalar_docs_handler))
+        .route("/scalar", get(docs::scalar_docs_handler))
+        .route("/swagger", get(docs::scalar_docs_handler))
+        .route("/openapi.json", get(docs::openapi_json_handler))
         .nest("/api/v1", api_v1)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())

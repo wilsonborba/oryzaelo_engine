@@ -396,6 +396,43 @@ async fn test_full_api_e2e_lifecycle() {
         tp_bench["total_duration_ms"].as_f64().unwrap()
     );
 
+    // 12. Test Scalar API Reference and OpenAPI 3.1 JSON Specification
+    // 12a. Root /docs (Scalar HTML)
+    let req = Request::builder()
+        .uri("/docs")
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let html_body = String::from_utf8(resp.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap();
+    assert!(html_body.contains("@scalar/api-reference"));
+    assert!(html_body.contains("id=\"api-reference\""));
+    assert!(html_body.contains("Oryza-Elo Edge Engine API Reference"));
+
+    // 12b. OpenAPI 3.1 JSON Endpoint (/openapi.json)
+    let req = Request::builder()
+        .uri("/openapi.json")
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let body = resp.into_body().collect().await.unwrap().to_bytes();
+    let openapi_json: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(openapi_json["openapi"], "3.1.0");
+    assert_eq!(openapi_json["info"]["title"], "Oryza-Elo Edge Engine API");
+    assert!(openapi_json["paths"]["/api/v1/weather/sensor-readings"].is_object());
+
+    // 12c. API v1 docs alias (/api/v1/docs)
+    let req = Request::builder()
+        .uri("/api/v1/docs")
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+
     println!("All E2E API integration tests passed successfully!");
 }
 
