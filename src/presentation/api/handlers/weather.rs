@@ -1,6 +1,7 @@
 //! # Oryza-Elo Architecture Guardrail: Weather Handlers
 
 use crate::core::error::AppError;
+use crate::core::settings::RICE_BASE_TEMPERATURE_CELSIUS;
 use crate::domain::models::weather::DailyWeatherRecord;
 use crate::domain::services::csv_ingestion::{CsvIngestionService, IngestionReport};
 use crate::domain::services::weather_analytics::{WeatherAnalyticsReport, WeatherAnalyticsService};
@@ -122,11 +123,43 @@ async fn process_csv_ingestion(
     ))
 }
 
+/// Flattened weather record with a server-computed `daily_gdd`, so every client
+/// (chart, table, CSV export) reads the exact same GDD value the biomet
+/// aggregates use (`WeatherAnalyticsService::total_gdd`), instead of each
+/// recomputing it independently.
+#[derive(Serialize)]
+pub struct WeatherRecordResponse {
+    pub date: NaiveDate,
+    pub t_max: f64,
+    pub t_min: f64,
+    pub precipitation_mm: f64,
+    pub radiation_mj_m2: f64,
+    pub relative_humidity_pct: f64,
+    pub source: String,
+    pub daily_gdd: f64,
+}
+
+impl From<DailyWeatherRecord> for WeatherRecordResponse {
+    fn from(r: DailyWeatherRecord) -> Self {
+        let daily_gdd = r.daily_gdd(RICE_BASE_TEMPERATURE_CELSIUS);
+        Self {
+            date: r.date,
+            t_max: r.t_max,
+            t_min: r.t_min,
+            precipitation_mm: r.precipitation_mm,
+            radiation_mj_m2: r.radiation_mj_m2,
+            relative_humidity_pct: r.relative_humidity_pct,
+            source: r.source,
+            daily_gdd,
+        }
+    }
+}
+
 /// Retrieves retrospective weather records for a parcel.
 pub async fn get_records(
     State(state): State<AppState>,
     Query(query): Query<WeatherQuery>,
-) -> Result<Json<Vec<DailyWeatherRecord>>, AppError> {
+) -> Result<Json<Vec<WeatherRecordResponse>>, AppError> {
     let up_to_date = query.up_to_date.unwrap_or_else(|| chrono::Utc::now().date_naive());
     let days = query.days.unwrap_or(60);
 
@@ -135,7 +168,7 @@ pub async fn get_records(
         .get_retrospective(&query.parcel_id, up_to_date, days)
         .await?;
 
-    Ok(Json(records))
+    Ok(Json(records.into_iter().map(WeatherRecordResponse::from).collect()))
 }
 
 #[derive(Deserialize)]
