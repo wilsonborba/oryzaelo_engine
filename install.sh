@@ -152,6 +152,10 @@ fetch_release() {
         fi
     fi
 
+    say "Cleaning up temporary files and downloaded archives..."
+    $SUDO rm -rf "$tmp_dir"
+    trap - EXIT
+
     $SUDO chmod 755 "$BIN_DIR/oryzaelo_engine" 2>/dev/null || true
     say_ok "Binary installed to $BIN_DIR/oryzaelo_engine"
 }
