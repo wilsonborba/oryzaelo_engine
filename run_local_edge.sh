@@ -1,0 +1,1 @@
+../oryzaelo/scripts/run_local_edge.sh

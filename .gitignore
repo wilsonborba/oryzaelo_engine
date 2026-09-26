@@ -25,6 +25,9 @@ catboost_info/
 /target/
 **/*.rs.bk
 
+# Pre-built Flutter Web static assets (populated by copy_local_web_to_engine.sh)
+src/presentation/static/
+
 # Local SQLite databases (strictly in src/dal/data/local/)
 *.db
 *.db-shm
