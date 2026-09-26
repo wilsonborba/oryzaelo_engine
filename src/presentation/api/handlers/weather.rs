@@ -3,6 +3,7 @@
 use crate::core::error::AppError;
 use crate::domain::models::weather::DailyWeatherRecord;
 use crate::domain::services::csv_ingestion::{CsvIngestionService, IngestionReport};
+use crate::domain::services::weather_analytics::{WeatherAnalyticsReport, WeatherAnalyticsService};
 use crate::presentation::api::state::AppState;
 use axum::extract::{Multipart, Query, State};
 use axum::http::StatusCode;
@@ -194,5 +195,36 @@ pub async fn ingest_single_record(
             record,
         }),
     ))
+}
+
+#[derive(Deserialize)]
+pub struct AnalyticsQuery {
+    pub parcel_id: String,
+    pub days: Option<usize>,
+    pub up_to_date: Option<NaiveDate>,
+}
+
+/// Retrieves agrometeorological analytics, correlation matrix, and dynamic trilingual alerts.
+pub async fn get_weather_analytics(
+    State(state): State<AppState>,
+    Query(query): Query<AnalyticsQuery>,
+) -> Result<Json<WeatherAnalyticsReport>, AppError> {
+    let _ = state
+        .parcel_repo
+        .get_by_id(&query.parcel_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("Parcel {} not found", query.parcel_id)))?;
+
+    let up_to_date = query.up_to_date.unwrap_or_else(|| chrono::Utc::now().date_naive());
+    let days = query.days.unwrap_or(60);
+
+    let records = state
+        .weather_repo
+        .get_retrospective(&query.parcel_id, up_to_date, days)
+        .await?;
+
+    let report = WeatherAnalyticsService::compute_analytics(&query.parcel_id, &records, up_to_date, days)?;
+
+    Ok(Json(report))
 }
 

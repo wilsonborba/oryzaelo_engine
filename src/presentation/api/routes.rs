@@ -47,6 +47,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/weather/record", post(weather::ingest_single_record))
         .route("/weather/records", get(weather::get_records))
         .route("/weather/history", get(weather::get_records))
+        .route("/weather/analytics", get(weather::get_weather_analytics))
         // Phenology Inference & History
         .route("/phenology/predict", post(phenology::predict_stage))
         .route("/phenology/latest", get(phenology::get_latest_prediction))

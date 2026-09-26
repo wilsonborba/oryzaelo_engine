@@ -7,7 +7,9 @@
 pub mod agronomic_advisor;
 pub mod biomet_calculator;
 pub mod csv_ingestion;
+pub mod weather_analytics;
 
 pub use agronomic_advisor::*;
 pub use biomet_calculator::*;
 pub use csv_ingestion::*;
+pub use weather_analytics::*;
