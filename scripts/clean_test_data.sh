@@ -1,24 +1,21 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Oryza-Elo: Limpeza de Dados de Teste & Reset de Fábrica
+# Oryza-Elo: Limpeza de Dados de Teste & Reset (Reutilização da API Rust)
 # ==============================================================================
-# Remove registros de teste em todas as tabelas e preserva os presets oficiais.
+# Consome diretamente o endpoint Rust nativo POST /api/v1/admin/clean.
 # ==============================================================================
 
 set -euo pipefail
 
-SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+PORT="${PORT:-8005}"
+BASE_URL="http://127.0.0.1:$PORT"
 
-if [ -f "$SCRIPT_DIR/Cargo.toml" ]; then
-    ENGINE_DIR="$SCRIPT_DIR"
-elif [ -f "$SCRIPT_DIR/../Cargo.toml" ]; then
-    ENGINE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-else
-    ENGINE_DIR="/home/wilsonborba/Documents/Others/Asodya/oryzaelo_engine"
+if ! curl -s "$BASE_URL/health" > /dev/null 2>&1; then
+    echo "⚠️  O engine não está em execução na porta $PORT."
+    echo "   Inicie primeiro com ./run_local_edge.sh ou configure PORT=<porta>."
+    exit 1
 fi
 
-cd "$ENGINE_DIR"
-PYTHON_SCRIPT="$ENGINE_DIR/scripts/clean_test_data.py"
-
-python3 "$PYTHON_SCRIPT" "$@"
+echo "🧹 Enviando requisição para limpar base de teste via API Rust nativa..."
+RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/admin/clean")
+echo "$RESPONSE" | jq . || echo "$RESPONSE"
