@@ -6,7 +6,9 @@ Este documento formaliza a avaliação experimental da latência de inferência 
 
 O benchmark foi executado em ambiente CPU com 1.000 iterações unitárias após 50 iterações de aquecimento (*warmup*).
 
-| Métrica | Valor Obtido (Rust + ONNX) | Meta Borda Rust | Teto Orientador (USP/ESALQ) | Status |
+**Ambiente de medição**: CPU Intel Core i7-13700HX (x86_64), computador do autor. A medição em hardware de borda (Raspberry Pi 5, aarch64) ainda não foi realizada.
+
+| Métrica | Valor Obtido (Rust + ONNX) | Meta Borda Rust | Teto da Hipótese (pré-projeto do TCC) | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Latência Média** | **20.889 µs (0.0209 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado (239.4x mais rápido)** |
 | **Mediana (p50)** | **20.599 µs (0.0206 ms)** | < 5,0 ms | < 200,0 ms | **Aprovado** |
@@ -27,8 +29,11 @@ O modelo consome estritamente um tensor unidimensional com formato `[1, 44]` de 
 
 - **Sessão Singleton Residente**: O arquivo ONNX (3,2 MB) é carregado na memória RAM uma única vez no boot da aplicação, consumindo aproximadamente 18 MB de memória residente (RSS) e evitando overhead de leitura de disco (I/O).
 - **Sincronização Thread-Safe**: A sessão é envelopada em um `std::sync::Mutex<Session>` para garantir segurança em acessos concorrentes sem vazamento de memória ou concorrência descontrolada no runtime C do ONNX.
-- **Zero Leakage**: O runtime de inferência processa unicamente arrays estáticos na pilha e no heap local sem alocações dinâmicas repetitivas, permitindo execução contínua 24/7 em nós Raspberry Pi 4 com 1 GB de RAM sem necessidade de reinicialização.
+- **Zero Leakage**: O runtime de inferência processa unicamente arrays estáticos na pilha e no heap local sem alocações dinâmicas repetitivas. A operação contínua em Raspberry Pi ainda não foi testada.
 
-## 4. Conclusão para a Tese de Doutorado / Dissertação
+## 4. Conclusão
 
-Os resultados confirmam que a substituição de pipelines interpretados em Python por executáveis compilados em Rust com ONNX Runtime C ABI reduz a latência de inferência por predição para o patamar submilissegundo (~20.9 µs), viabilizando previsões fenológicas e geração de recomendações agronômicas instantâneas na borda rural, mesmo sob hardware de baixo custo e restrição energética severa.
+A inferência com ONNX Runtime em Rust ficou no patamar submilissegundo (~20.9 µs por predição em CPU x86_64), na mesma ordem de grandeza da medição feita no pipeline Python do relatório 03 (18.8 µs). A confirmação em hardware de borda de baixo custo (Raspberry Pi 5) está pendente.
+
+---
+*Revisado em 2026-10-05: inclusão do ambiente de medição, correção da origem do teto de 200 ms (hipótese do pré-projeto, não exigência do orientador) e remoção de afirmações sobre execução em Raspberry Pi e sobre redução de latência frente ao Python, que não foram medidas.*

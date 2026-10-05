@@ -42,7 +42,7 @@ pub const RICE_BASE_TEMPERATURE_CELSIUS: f64 = 10.0;
 /// Janelas temporais retrospectivas padrão para extração de séries climáticas (dias)
 pub const RETROSPECTIVE_WINDOWS_DAYS: [u32; 4] = [7, 14, 30, 60];
 
-/// Teto máximo de latência de inferência em hardware de borda (Comentário 2 do orientador)
+/// Teto máximo de latência de inferência em hardware de borda (definido na hipótese do pré-projeto do TCC)
 pub const EDGE_LATENCY_CEILING_MS: u64 = 200;
 
 /// Meta de latência interna do backend em Rust (submilissegundos / microssegundos)
