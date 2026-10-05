@@ -22,25 +22,25 @@ Este documento formaliza a avaliação experimental comparativa entre três arqu
 
 ---
 
-## 2. Superação da Meta: Modelo de 3 Macro-Fases Fenológicas (BBCH)
+## 2. Modelo de 3 Macro-Fases Fenológicas (BBCH)
 Ao agrupar as sub-fases fenológicas nas **três macro-fases agro-ecológicas canônicas** da orizicultura internacional (Escala BBCH Decimal):
 - **Fase 1 - Vegetativa** (BBCH 10–29: Plântula / *Seedling* e Perfilhamento / *Tillering*) — 1.687 amostras (70,35%);
 - **Fase 2 - Reprodutiva** (BBCH 40–69: Emborrachamento / *Booting*, Floração / *Anthesis* e Espigamento / *Heading*) — 555 amostras (23,14%);
 - **Fase 3 - Maturação** (BBCH 70–99: Maturação Leitosa/Cérea / *Pre-Harvest* e Prontidão de Colheita / *Harvest*) — 156 amostras (6,51%).
 
-O modelo atinge com folga a meta de **Macro-F1 $\ge 0,75$**, alcançando **Macro-F1 = 0.7339** e **Acurácia Global = 87,2%**!
+O modelo alcança **Macro-F1 = 0.7339**, abaixo da meta de **Macro-F1 $\ge 0,75$** (diferença de 0,016), com **Acurácia Balanceada = 0.7812** e **Acurácia Global = 87,2%**.
 
 ### Métricas Detalhadas por Macro-Fase (CatBoost Macro-Scale):
 | Macro-Fase Fenológica | Estágios Fisiológicos Abrangidos | Suporte Real | Precisão | Revocação | F1-Score |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **1_Vegetative** | Plântula, Perfilhamento, Floração, Espigamento ou Maturação | 1,687 | 0.9142 | 0.8275 | **0.8687** |
-| **2_Reproductive** | Plântula, Perfilhamento, Floração, Espigamento ou Maturação | 555 | 0.5848 | 0.6955 | **0.6354** |
-| **3_Ripening** | Plântula, Perfilhamento, Floração, Espigamento ou Maturação | 156 | 0.6066 | 0.8205 | **0.6975** |
+| **1_Vegetative** | Plântula (`ระยะกล้า`) e Perfilhamento (`แตกกอ`) | 1,687 | 0.9142 | 0.8275 | **0.8687** |
+| **2_Reproductive** | Emborrachamento (`ตั้งท้อง`), Espigamento (`ออกรวง`) e Floração (`ออกดอก`) | 555 | 0.5848 | 0.6955 | **0.6354** |
+| **3_Ripening** | Pré-colheita (`ก่อนเก็บเกี่ยว`) e Colheita (`ก่อนเก็บเกี่ยวเกี่ยว`) | 156 | 0.6066 | 0.8205 | **0.6975** |
 
 ---
 
 ## 3. Desempenho Granular nas 7 Classes Fenológicas
-Na escala de 7 classes, o modelo atinge F1 elevado ($0,77$ a $0,81$) nas 4 classes que concentram **88,5% de toda a base**, apresentando desafios naturais de sobreposição fenológica nas fases efêmeras de transição:
+Na escala de 7 classes, o modelo atinge F1 entre $0,54$ e $0,76$ nas 4 classes que concentram **88,5% de toda a base** (Perfilhamento 0,755; Pré-colheita 0,748; Plântula 0,700; Espigamento 0,539), com desempenho menor nas fases de transição de curta duração:
 
 | Código (Tailandês) | Nome Científico (Inglês) | Código BBCH | Suporte | Precisão | Revocação | F1-Score |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -100,6 +100,7 @@ Para cumprir os mandatos estritos de engenharia e edge computing do Oryza-Elo:
   4. `model_metadata.json`: Dicionários de encoding categórico e ordenação de tensores.
 
 ### Resultados do Benchmark de Latência (1.000 Inferências Unitárias em CPU):
+- **Ambiente de Medição**: pipeline Python, CPU Intel Core i7-13700HX (x86_64), computador do autor. Não executado em hardware de borda;
 - **Latência Média**: `0.0188 ms` (18.8 microssegundos);
 - **Mediana (p50)**: `0.0186 ms`;
 - **Percentil 95 (p95)**: `0.0208 ms`;
@@ -107,10 +108,10 @@ Para cumprir os mandatos estritos de engenharia e edge computing do Oryza-Elo:
 - **Vazão Teórica de Inferência**: `53,306 predições/segundo` em um único núcleo de CPU.
 
 > [!IMPORTANT]
-> **Conformidade Tripla Garantida**:
-> 1. **Teto do Orientador da Esalq USP (< 200 ms)**: Atingido com folga de **10,661x**;
+> **Conformidade com os Tetos de Latência (medição em CPU x86_64)**:
+> 1. **Teto de 200 ms definido na hipótese do pré-projeto do TCC**: Atingido com folga de **10.661x**;
 > 2. **Teto de Engenharia do Microserviço Rust (< 5 ms)**: Atingido com folga de **267x**;
-> 3. **Consumo Energético na Borda**: O baixíssimo custo de CPU viabiliza inferência instantânea no Raspberry Pi 4 / CM4 com consumo elétrico desprezível (< 0,01 W·s por requisição), viabilizando operação contínua sob painel solar.
+> 3. **Latência e Consumo Energético em Hardware de Borda (Raspberry Pi 5)**: Ainda não medidos.
 
 ---
-*Relatório experimental auditado e validado para a Milestone 1 do Oryza-Elo.*
+*Relatório experimental da Milestone 1 do Oryza-Elo. Revisado em 2026-10-05: correção da afirmação de que o modelo de 3 macro-fases atingiu a meta de Macro-F1 (0.7339 < 0,75), do intervalo de F1 das 4 classes principais, da coluna de estágios da tabela de macro-fases, da origem do teto de 200 ms e do ambiente de medição de latência; remoção da estimativa de consumo energético, que não foi medida.*
