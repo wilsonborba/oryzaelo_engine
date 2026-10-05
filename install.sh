@@ -142,6 +142,12 @@ fetch_release() {
             $SUDO cp "$clone_dir/target/release/oryzaelo_engine" "$BIN_DIR/"
         fi
 
+        # The engine loads its models from a path relative to the service WorkingDirectory
+        if [[ -d "$clone_dir/src/dal/data/processed/models" ]]; then
+            $SUDO mkdir -p "$INSTALL_DIR/src/dal/data/processed/models"
+            $SUDO cp "$clone_dir/src/dal/data/processed/models"/* "$INSTALL_DIR/src/dal/data/processed/models/"
+        fi
+
         if [[ -d "$clone_dir/src/presentation/static" ]]; then
             $SUDO cp -r "$clone_dir/src/presentation/static"/* "$WEB_DIR/"
         fi
