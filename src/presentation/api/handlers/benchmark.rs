@@ -15,7 +15,6 @@ use axum::extract::{Query, State};
 use axum::Json;
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 use std::time::Instant;
 
 #[derive(Deserialize)]
@@ -293,9 +292,9 @@ pub async fn run_storage_benchmark(
         .unwrap_or(0);
 
     // Extract file size from database path if file-based on disk
-    let file_path = crate::dal::database::connection::DEFAULT_DB_REL_PATH;
-    let (db_size_bytes, db_size_kb) = if Path::new(file_path).exists() {
-        let meta = std::fs::metadata(file_path).ok();
+    let file_path = crate::dal::database::connection::configured_db_path();
+    let (db_size_bytes, db_size_kb) = if file_path.exists() {
+        let meta = std::fs::metadata(&file_path).ok();
         let bytes = meta.map(|m| m.len()).unwrap_or(0);
         (bytes, (bytes as f64) / 1024.0)
     } else {

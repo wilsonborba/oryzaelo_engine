@@ -1,8 +1,10 @@
 //! # Oryza-Elo Architecture Guardrail: Database Connection Pool
 //!
-//! SQLite connection pool manager strictly confined to `src/dal/data/local/oryza_elo_edge.db`.
+//! SQLite connection pool manager. Uses `DATABASE_PATH` from `.env` when set,
+//! otherwise the default `src/dal/data/local/oryza_elo_edge.db`.
 
 use crate::core::error::AppError;
+use crate::core::settings::app_settings;
 use crate::domain::models::device_mapping::DeviceMapping;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Executor, SqlitePool};
@@ -19,6 +21,27 @@ pub const MIGRATION_SQL: &str = include_str!("migrations/001_initial_schema.sql"
 /// Resolves the absolute database path for local edge storage.
 pub fn get_default_db_path() -> PathBuf {
     PathBuf::from(DEFAULT_DB_REL_PATH)
+}
+
+/// Resolves the database path: the configured `DATABASE_PATH` when present and not blank,
+/// otherwise the default relative path.
+pub fn resolve_db_path(configured: Option<&str>) -> PathBuf {
+    match configured.map(str::trim) {
+        Some(path) if !path.is_empty() => PathBuf::from(path),
+        _ => get_default_db_path(),
+    }
+}
+
+/// Database path in effect for this process, taken from the application settings.
+pub fn configured_db_path() -> PathBuf {
+    resolve_db_path(app_settings().database_path.as_deref())
+}
+
+/// True when a configured path points to a database that does not exist yet while the
+/// legacy default database still holds data, which would look like lost data after an update.
+pub fn is_legacy_db_left_behind(resolved: &Path) -> bool {
+    let legacy = get_default_db_path();
+    resolved != legacy.as_path() && !resolved.exists() && legacy.exists()
 }
 
 /// Initializes an SQLite connection pool and ensures schema & presets are up to date.
@@ -76,9 +99,10 @@ pub async fn create_pool(db_url_or_path: &str) -> Result<SqlitePool, AppError> {
     Ok(pool)
 }
 
-/// Initializes the default edge production database pool at `src/dal/data/local/oryza_elo_edge.db`.
+/// Initializes the edge production database pool at the configured path
+/// (`DATABASE_PATH`, or `src/dal/data/local/oryza_elo_edge.db` by default).
 pub async fn init_default_pool() -> Result<SqlitePool, AppError> {
-    create_pool(DEFAULT_DB_REL_PATH).await
+    create_pool(&configured_db_path().to_string_lossy()).await
 }
 
 /// Seeds official vendor presets (Pessl, Dragino/Renke, Davis, NASA) if not already present.
@@ -134,5 +158,19 @@ mod tests {
             .unwrap();
 
         assert_eq!(row_count.0, 4, "Must seed exactly 4 factory presets");
+    }
+
+    #[test]
+    fn test_resolve_db_path_uses_configured_value() {
+        assert_eq!(
+            resolve_db_path(Some("/opt/oryzaelo_engine/data/oryza_elo_edge.db")),
+            PathBuf::from("/opt/oryzaelo_engine/data/oryza_elo_edge.db")
+        );
+    }
+
+    #[test]
+    fn test_resolve_db_path_falls_back_to_default() {
+        assert_eq!(resolve_db_path(None), get_default_db_path());
+        assert_eq!(resolve_db_path(Some("   ")), get_default_db_path());
     }
 }
