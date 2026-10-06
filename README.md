@@ -87,7 +87,10 @@ The installer writes `/opt/oryzaelo_engine/.env`. Edit it and restart the servic
 | `SERVER_HOST` | `0.0.0.0` | Interface the API listens on |
 | `SERVER_PORT` / `PORT` | `8005` | HTTP port for the API and the dashboard |
 | `STATIC_DIR` | `/opt/oryzaelo_engine/web` | Folder with the dashboard build served by the engine |
+| `DATABASE_PATH` | `/opt/oryzaelo_engine/data/oryza_elo_edge.db` | SQLite database file (without the variable, `src/dal/data/local/oryza_elo_edge.db` relative to the working directory) |
 | `LOG_LEVEL` | `info` | Log verbosity |
+| `AUTONOMY_MODE` | `local_only` | Only `local_only` exists in this version; other values log a warning |
+| `INFERENCE_ENGINE` | `onnx_resident` | Only `onnx_resident` exists in this version; other values log a warning |
 | `RICE_BASE_TEMPERATURE_CELSIUS` | `10.0` | Base temperature for growing degree days |
 
 ## API overview

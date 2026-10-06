@@ -48,6 +48,12 @@ pub const EDGE_LATENCY_CEILING_MS: u64 = 200;
 /// Meta de latência interna do backend em Rust (submilissegundos / microssegundos)
 pub const RUST_EDGE_TARGET_LATENCY_MS: u64 = 5;
 
+/// Único modo de autonomia suportado nesta versão (sincronização em nuvem é proposta futura)
+pub const DEFAULT_AUTONOMY_MODE: &str = "local_only";
+
+/// Único motor de inferência suportado nesta versão (sessão ONNX residente em memória)
+pub const DEFAULT_INFERENCE_ENGINE: &str = "onnx_resident";
+
 /// Struct para armazenar configurações em tempo de execução
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -57,6 +63,10 @@ pub struct Settings {
     pub server_host: String,
     pub server_port: u16,
     pub log_level: String,
+
+    // Modos de operação declarados no .env (AUTONOMY_MODE e INFERENCE_ENGINE)
+    pub autonomy_mode: String,
+    pub inference_engine: String,
 
     // Parâmetros científicos e de APIs públicas
     pub nasa_power_url: String,
@@ -79,6 +89,9 @@ pub struct Settings {
 
     /// Chave ou token de API privada (definido no .env; default NULO)
     pub private_api_token: Option<String>,
+
+    /// Caminho do banco SQLite (DATABASE_PATH no .env; default NULO usa o caminho relativo padrão)
+    pub database_path: Option<String>,
 }
 
 pub type AppSettings = Settings;
@@ -90,6 +103,8 @@ impl Default for Settings {
             server_host: DEFAULT_SERVER_HOST.to_string(),
             server_port: DEFAULT_PORT,
             log_level: DEFAULT_LOG_LEVEL.to_string(),
+            autonomy_mode: DEFAULT_AUTONOMY_MODE.to_string(),
+            inference_engine: DEFAULT_INFERENCE_ENGINE.to_string(),
             nasa_power_url: NASA_POWER_BASE_URL.to_string(),
             base_temp_celsius: RICE_BASE_TEMPERATURE_CELSIUS,
             // Paths locais e segredos são estritamente nulos por padrão no código
@@ -97,6 +112,7 @@ impl Default for Settings {
             processed_data_path: None,
             static_dir: None,
             private_api_token: None,
+            database_path: None,
         }
     }
 }
@@ -113,6 +129,8 @@ lazy_static! {
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(DEFAULT_PORT);
         let log_level = env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_LEVEL.to_string());
+        let autonomy_mode = env::var("AUTONOMY_MODE").unwrap_or_else(|_| DEFAULT_AUTONOMY_MODE.to_string());
+        let inference_engine = env::var("INFERENCE_ENGINE").unwrap_or_else(|_| DEFAULT_INFERENCE_ENGINE.to_string());
         let nasa_power_url = env::var("NASA_POWER_BASE_URL").unwrap_or_else(|_| NASA_POWER_BASE_URL.to_string());
         let base_temp_celsius = env::var("RICE_BASE_TEMPERATURE_CELSIUS")
             .ok()
@@ -124,18 +142,22 @@ lazy_static! {
         let processed_data_path = env::var("PROCESSED_DATA_PATH").ok();
         let static_dir = env::var("STATIC_DIR").ok();
         let private_api_token = env::var("PRIVATE_API_TOKEN").ok();
+        let database_path = env::var("DATABASE_PATH").ok().filter(|p| !p.trim().is_empty());
 
         Settings {
             app_name: DEFAULT_APP_NAME.to_string(),
             server_host,
             server_port,
             log_level,
+            autonomy_mode,
+            inference_engine,
             nasa_power_url,
             base_temp_celsius,
             raw_data_path,
             processed_data_path,
             static_dir,
             private_api_token,
+            database_path,
         }
     };
 }
