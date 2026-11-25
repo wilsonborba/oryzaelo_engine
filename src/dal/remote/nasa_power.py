@@ -34,7 +34,7 @@ class NasaPowerClient:
     def __init__(self, cache_dir: str | None = None):
         if cache_dir is None:
             repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-            cache_dir = os.path.join(repo_root, 'src/dal/data/raw/nasa_power_cache')
+            cache_dir = os.path.join(repo_root, 'src/dal/data/raw/principal/nasa_power_cache')
         self.cache_dir = cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
 
@@ -113,7 +113,7 @@ class NasaPowerClient:
 
 def run_ingestion_pipeline():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    raw_csv = os.path.join(repo_root, 'src/dal/data/raw/ricepest_survey_combined_66_68.csv')
+    raw_csv = os.path.join(repo_root, 'src/dal/data/raw/principal/ricepest_survey_combined_66_68.csv')
 
     print("=" * 70)
     print("ORYZA-ELO: INGESTÃO E CACHE CLIMÁTICO NASA POWER (ISSUE #2)")

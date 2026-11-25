@@ -147,8 +147,8 @@ def enrich_survey_with_climate(
 if __name__ == '__main__':
     from src.dal.remote.nasa_power import NasaPowerClient
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    raw_csv = os.path.join(repo_root, 'src/dal/data/raw/ricepest_survey_combined_66_68.csv')
-    out_csv = os.path.join(repo_root, 'src/dal/data/processed/rice_survey_climate_enriched.csv')
+    raw_csv = os.path.join(repo_root, 'src/dal/data/raw/principal/ricepest_survey_combined_66_68.csv')
+    out_csv = os.path.join(repo_root, 'src/dal/data/processed/principal/rice_survey_climate_enriched.csv')
 
     survey_df = pd.read_csv(raw_csv)
     client = NasaPowerClient()

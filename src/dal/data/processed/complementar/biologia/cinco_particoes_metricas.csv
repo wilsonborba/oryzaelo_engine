@@ -1,0 +1,10 @@
+modelo,braco,n,macro_f1
+xgboost_original_TH,referencia,2370,0.6188599337955649
+xgboost_original_TH,interacao,2370,0.6132902918887545
+xgboost_original_TH,perfil_foliar,2370,0.6152530662808879
+TH,referencia,2370,0.6059208053560391
+TH,interacao,2370,0.607618877928117
+TH,perfil_foliar,2370,0.6120163236331907
+TH_ES_US_JP,referencia,2370,0.6071362559815946
+TH_ES_US_JP,interacao,2370,0.6082681653903016
+TH_ES_US_JP,perfil_foliar,2370,0.6139517743716532

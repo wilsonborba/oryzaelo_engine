@@ -1,0 +1,5 @@
+{
+  "arm": "Thai only, original XGBoost recipe refitted, seed 43",
+  "macro_f1": 0.24099003292418167,
+  "accuracy": 0.4883177570093458
+}

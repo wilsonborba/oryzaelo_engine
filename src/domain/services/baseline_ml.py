@@ -456,7 +456,7 @@ def run_ml_benchmarks(data_csv: str, output_report: str, models_dir: str):
     report_lines.append("## Classificação Multiclasse dos Estágios Fenológicos do Arroz (*Oryza sativa L.*)")
     report_lines.append("")
     report_lines.append("> **Status**: Concluído | **Fase**: Milestone 1 (Issue #4) | **Data**: 2026-09-18  ")
-    report_lines.append(f"> **Dataset Agrometeorológico**: `src/dal/data/processed/rice_survey_climate_enriched.csv` ({len(df):,} observações)  ")
+    report_lines.append(f"> **Dataset Agrometeorológico**: `src/dal/data/processed/principal/rice_survey_climate_enriched.csv` ({len(df):,} observações)  ")
     report_lines.append(f"> **Modelos Exportados**: `src/dal/data/processed/models/` (`.onnx`, `.cbm`, `.json`)  ")
     report_lines.append("")
     report_lines.append("---")
@@ -586,8 +586,8 @@ def run_ml_benchmarks(data_csv: str, output_report: str, models_dir: str):
 
 if __name__ == '__main__':
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    data_csv = os.path.join(repo_root, 'src/dal/data/processed/rice_survey_climate_enriched.csv')
-    out_rep = os.path.join(repo_root, 'src/dal/research/03_baseline_ml_benchmarks.md')
+    data_csv = os.path.join(repo_root, 'src/dal/data/processed/principal/rice_survey_climate_enriched.csv')
+    out_rep = os.path.join(repo_root, 'src/dal/research/principal/03_baseline_ml_benchmarks.md')
     models_dir = os.path.join(repo_root, 'src/dal/data/processed/models')
 
     run_ml_benchmarks(data_csv, out_rep, models_dir)

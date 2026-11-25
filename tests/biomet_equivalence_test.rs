@@ -29,7 +29,7 @@ fn get_repo_root() -> PathBuf {
 #[test]
 fn test_equivalence_against_ground_truth_row() {
     let repo_root = get_repo_root();
-    let cache_file = repo_root.join("src/dal/data/raw/nasa_power_cache/grid_8.0_100.5.json");
+    let cache_file = repo_root.join("src/dal/data/raw/principal/nasa_power_cache/grid_8.0_100.5.json");
 
     assert!(
         cache_file.exists(),
