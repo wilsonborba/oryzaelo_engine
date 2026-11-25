@@ -9,9 +9,8 @@ import numpy as np
 import pandas as pd
 import requests
 
-from paths import REPO, SOURCES, RESULTS, THAI
+from paths import REPO, RAW, OBS, RESULTS, THAI
 ROOT = Path(__file__).resolve().parents[1]
-RAW = SOURCES
 CACHE=RAW/'power'
 CACHE.mkdir(exist_ok=True)
 ENGINE=REPO
@@ -80,20 +79,20 @@ def calendar(data):
 
 if __name__=='__main__':
     (RESULTS / 'results').mkdir(parents=True, exist_ok=True)
-    data=pd.concat([pd.read_csv(RAW/f,parse_dates=['parsed_date']) for f in ('spain.csv','trials.csv')],ignore_index=True)
+    data=pd.concat([pd.read_csv(OBS/f,parse_dates=['parsed_date']) for f in ('spain.csv','trials.csv')],ignore_index=True)
     data['query_lat']=(data.lat_clean*2).round()/2
     data['query_lon']=(data.lon_clean*2).round()/2
     with ThreadPoolExecutor(3) as pool:
         results=list(pool.map(cell_task,data.groupby(['query_lat','query_lon'])))
     final=calendar(pd.concat([r[0] for r in results],ignore_index=True))
-    final.to_csv(RAW/'international_features.csv.gz',index=False)
+    final.to_csv(OBS/'international_features.csv.gz',index=False)
     (RESULTS/'results/weather_manifest.json').write_text(json.dumps([r[1] for r in results],indent=2))
     # Check all 39 weather/calendar features in a stratified sample of the original Thai cache.
     thai=pd.read_csv(THAI/'features.csv',parse_dates=['parsed_date'])
     errors=[]
     for row in thai.sample(40,random_state=41).itertuples():
         lat,lon=[round(x*2)/2 for x in (row.lat_clean,row.lon_clean)]
-        fixture=ENGINE/f'src/dal/data/raw/nasa_power_cache/grid_{lat:.1f}_{lon:.1f}.json'
+        fixture=ENGINE/f'src/dal/data/raw/principal/nasa_power_cache/grid_{lat:.1f}_{lon:.1f}.json'
         vals=daily(json.loads(fixture.read_bytes())).loc[[row.parsed_date]].copy()
         vals['parsed_date']=vals.index
         vals['lat_clean']=row.lat_clean

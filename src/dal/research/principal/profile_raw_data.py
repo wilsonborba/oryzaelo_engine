@@ -4,7 +4,7 @@ Oryza-Elo: Scientific Reproducibility Script for Raw Survey Data Profiling.
 Audits the 2,398 field observations from Thailand's Rice Department (2023-2025).
 
 Usage:
-    python src/dal/research/profile_raw_data.py
+    python src/dal/research/principal/profile_raw_data.py
 """
 
 import os
@@ -14,8 +14,8 @@ import pandas as pd
 import numpy as np
 
 def main():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    raw_csv_path = os.path.join(repo_root, 'src/dal/data/raw/ricepest_survey_combined_66_68.csv')
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..'))
+    raw_csv_path = os.path.join(repo_root, 'src/dal/data/raw/principal/ricepest_survey_combined_66_68.csv')
 
     print("=" * 70)
     print("ORYZA-ELO: AUDITORIA FORENSE E PROFILING DE DADOS BRUTOS")

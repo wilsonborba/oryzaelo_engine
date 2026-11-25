@@ -14,7 +14,7 @@ sys.path.insert(0, str(V2 / "scripts"))
 import benchmark as bench
 from seasonal import analog
 
-SOURCES = bench.SOURCES / "biologia"
+SOURCES = bench.OBS / "biologia"
 PHOTO = ["has_photo", "sensitive"]
 INTERACTION = PHOTO + ["sensitive_daylength"]
 IDS = ["identity_" + name for name in ["RD41", "PTT1", "KDML105"]]
@@ -90,7 +90,7 @@ def run():
         assert np.isclose(bench.score(oof.y, oof.pred), prior[group]["cv_macro_f1"])
     assert not data.duplicated(["arm", "group", "source_row_id"]).any()
     data.to_csv(OUT / "predicoes.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
-    paths = {"thai": bench.THDIR / "features.csv", "external": bench.SOURCES / "international_features.csv.gz",
+    paths = {"thai": bench.THDIR / "features.csv", "external": bench.OBS / "international_features.csv.gz",
              "folds": bench.OUT / "development_folds.csv", "photoperiod": SOURCES / "cultivares_fotoperiodo.csv",
              "nutrition": SOURCES / "folha_npk_tailandia.csv", "protocol": HERE / "protocolo.md",
              "fit_script": Path(__file__), "benchmark_script": V2 / "scripts/benchmark.py",

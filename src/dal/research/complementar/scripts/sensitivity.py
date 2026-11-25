@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.metrics import recall_score
-from paths import SOURCES
+from paths import OBS
 from benchmark import CATS, ARMS, CLASSES, THDIR, FEATURES, ROOT, OUT, dataset, train, score, dump
 import json
 
@@ -26,7 +26,7 @@ pd.concat(predictions).to_csv(OUT/'sensitivity_predictions.csv.gz',index=False)
 pd.DataFrame(rows).to_csv(OUT/'sensitivity_scores.csv',index=False)
 
 # Hold out the final campaign for each external country. This is retrospective transfer.
-raw=pd.read_csv(SOURCES/'international_features.csv.gz',parse_dates=['parsed_date'])
+raw=pd.read_csv(OBS/'international_features.csv.gz',parse_dates=['parsed_date'])
 rows=[]
 for country in ('ES','US','JP'):
     last=raw.loc[raw.country==country,'parsed_date'].dt.year.max()

@@ -2,7 +2,7 @@
 ## Auditoria Forense das 2.398 Observações de Campo da Orizicultura Tailandesa (2023–2025)
 
 > **Status**: Publicado | **Fase**: Milestone 1 (Issue #1) | **Data**: 2026-09-18  
-> **Repositório**: `wilsonborba/oryza-elo` | **Caminho do Dataset**: `src/dal/data/raw/ricepest_survey_combined_66_68.csv`  
+> **Repositório**: `wilsonborba/oryza-elo` | **Caminho do Dataset**: `src/dal/data/raw/principal/ricepest_survey_combined_66_68.csv`  
 > **Hash Forense SHA-256**: `8ded458fc671f33660101cf4753b1c5427dde604da391786a4c8212839bdaa9b`  
 
 ---

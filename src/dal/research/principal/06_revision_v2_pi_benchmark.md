@@ -1,6 +1,6 @@
 # Relatório Técnico 06: Benchmark do Candidato v2 de Seis Classes (Raspberry Pi 5 e MSI)
 
-Medição do modelo exato `rice_stage_six.onnx` com o harness isolado [principal/pi_benchmark](principal/pi_benchmark). O relatório 04 permanece como evidência histórica de outro modelo e não foi alterado.
+Medição do modelo exato `rice_stage_six.onnx` com o harness isolado [principal/pi_benchmark](pi_benchmark). O relatório 04 permanece como evidência histórica de outro modelo e não foi alterado.
 
 ## Artefatos
 
@@ -51,7 +51,7 @@ Média das médias: 8.63 µs. Pior p99: 12.18 µs. Critério em todas as rodadas
 
 
 
-Os [resultados por rodada](../data/tcc/principal/pi_benchmark) e o [programa de medição](principal/pi_benchmark) acompanham esta versão.
+Os [resultados por rodada](../../data/processed/principal/pi_benchmark) e o [programa de medição](pi_benchmark) acompanham esta versão.
 
 ## Limites
 

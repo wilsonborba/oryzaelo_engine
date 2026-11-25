@@ -14,9 +14,9 @@ import sys
 from urllib.request import urlretrieve
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from paths import REPO, SOURCES as INPUTS, THAI
+from paths import REPO, RAW as INPUTS, THAI
 
-ROOT = REPO / ".research-run/extracao-biologica"
+ROOT = REPO / "src/dal/data/local/reproduction/extracao-biologica"
 SOURCES = ROOT / "fontes"
 
 

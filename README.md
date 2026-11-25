@@ -9,7 +9,7 @@ A Rust microservice that turns field weather into the rice crop's growth stage, 
 [![License: MIT](https://img.shields.io/badge/license-MIT-2A3828)](LICENSE)
 [![Rust 2021](https://img.shields.io/badge/rust-2021-D9A028)](Cargo.toml)
 [![ONNX Runtime](https://img.shields.io/badge/inference-ONNX%20Runtime-2A3828)](https://github.com/microsoft/onnxruntime)
-[![Tested on Raspberry Pi 5](https://img.shields.io/badge/tested%20on-Raspberry%20Pi%205-C4512B)](src/dal/research/04_rust_edge_inference_benchmark.md)
+[![Tested on Raspberry Pi 5](https://img.shields.io/badge/tested%20on-Raspberry%20Pi%205-C4512B)](src/dal/research/principal/04_rust_edge_inference_benchmark.md)
 
 [Website](https://oryza-elo.asodya.com/) · [Install](#quick-start) · [Dashboard gallery](https://oryza-elo.asodya.com/#/preview) · [How to use](https://oryza-elo.asodya.com/#/how-to-use) · [Research](#model-and-data) · [Reproduzir o TCC: instalação, dados e experimentos](src/dal/research/README.md)
 
@@ -132,11 +132,11 @@ Edge latency, measured with `GET /api/v1/benchmarks/latency?iterations=1000` (5 
 | Raspberry Pi 5, 8 GB, aarch64 | 56.8 µs | 80 µs | No thermal throttling, 68.4 MB resident memory |
 | Intel Core i7-13700HX laptop, x86_64 | 17.2 µs | 87 µs | Same protocol, for comparison |
 
-The research reports with methods, tables and caveats are in [`src/dal/research/`](src/dal/research/):
-[exploratory data analysis](src/dal/research/01_exploratory_data_analysis.md) ·
-[feature engineering](src/dal/research/02_feature_engineering_report.md) ·
-[model benchmarks](src/dal/research/03_baseline_ml_benchmarks.md) ·
-[edge inference benchmark](src/dal/research/04_rust_edge_inference_benchmark.md)
+The research reports with methods, tables and caveats are in [`src/dal/research/`](src/dal/research):
+[exploratory data analysis](src/dal/research/principal/01_exploratory_data_analysis.md) ·
+[feature engineering](src/dal/research/principal/02_feature_engineering_report.md) ·
+[model benchmarks](src/dal/research/principal/03_baseline_ml_benchmarks.md) ·
+[edge inference benchmark](src/dal/research/principal/04_rust_edge_inference_benchmark.md)
 
 ## Dashboard gallery
 
@@ -155,7 +155,7 @@ The research reports with methods, tables and caveats are in [`src/dal/research/
   </tr>
 </table>
 
-All images are in [`.github/screenshots/`](.github/screenshots/). For an interactive tour, see the [dashboard preview on the website](https://oryza-elo.asodya.com/#/preview).
+All images are in [`.github/screenshots/`](.github/screenshots). For an interactive tour, see the [dashboard preview on the website](https://oryza-elo.asodya.com/#/preview).
 
 ## Project structure
 

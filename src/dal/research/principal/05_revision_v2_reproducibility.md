@@ -5,11 +5,11 @@ The original data, deployed model, and historical hardware report remain unchang
 
 ## Run the study
 
-Follow the [installation and reproduction guide](README.md). From the repository root:
+Follow the [installation and reproduction guide](../README.md). From the repository root:
 
 ```bash
 python src/dal/research/principal/reproduce.py train
-TCC_REVISION_FIXTURE="$PWD/.research-run/principal/feature_equivalence_fixture.json" cargo test --release --test revision_feature_equivalence_test
+TCC_REVISION_FIXTURE="$PWD/src/dal/data/local/reproduction/principal/feature_equivalence_fixture.json" cargo test --release --test revision_feature_equivalence_test
 ```
 
 Individual phases are `prepare`, `fixture`, `evaluate`, `scouting`, and `export`.

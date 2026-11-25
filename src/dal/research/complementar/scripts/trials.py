@@ -3,7 +3,7 @@ import csv
 import datetime as dt
 import subprocess
 from pathlib import Path
-from paths import SOURCES as RAW
+from paths import OBS, RAW
 from urllib.request import urlretrieve
 
 def download(name, url):
@@ -34,5 +34,5 @@ for name,day in [('はれわたり',29),('まっしぐら',28),('青天の霹靂
     assert f'7/{day}' in line and line.strip().endswith(f'7/{day}')
     for year in (2023,2024):
         rows.append(['JP','Kuroishi|'+name,dt.date(year,7,day),40.665489,140.588745,'heading',name,'Unknown','Aomori'])
-with (RAW/'trials.csv').open('w') as f:
+with (OBS/'trials.csv').open('w') as f:
     w=csv.writer(f);w.writerow('country site parsed_date lat_clean lon_clean label rice_variety rice_ecosystem province'.split());w.writerows(rows)

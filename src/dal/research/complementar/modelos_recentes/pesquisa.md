@@ -17,7 +17,7 @@ Busca dirigida em fontes primárias até 25/11/2026. A seleção considerou pequ
 
 ## Comparação local
 
-Os quatro métodos receberam exatamente as mesmas 44 variáveis do braço principal tailandês, incluindo cultivar, contexto geográfico e históricos NASA POWER. As duas validações com cinco partições usaram 2.370 vistorias de 2023 a 2025 e avaliaram cada vistoria uma vez fora do seu treino. A validação temporal usou as primeiras 1.514 para treino e as 856 de 2025 para avaliação. O XGBoost reproduziu todas as previsões arquivadas tanto no protocolo principal como no temporal. Para cada método foram realizadas onze avaliações, cinco estratificadas, cinco por província e uma temporal. Foram usadas configurações fixas. [Protocolo e escolhas](protocolo.md) · [Resultados numéricos](metricas.csv)
+Os quatro métodos receberam exatamente as mesmas 44 variáveis do braço principal tailandês, incluindo cultivar, contexto geográfico e históricos NASA POWER. As duas validações com cinco partições usaram 2.370 vistorias de 2023 a 2025 e avaliaram cada vistoria uma vez fora do seu treino. A validação temporal usou as primeiras 1.514 para treino e as 856 de 2025 para avaliação. O XGBoost reproduziu todas as previsões arquivadas tanto no protocolo principal como no temporal. Para cada método foram realizadas onze avaliações, cinco estratificadas, cinco por província e uma temporal. Foram usadas configurações fixas. [Protocolo e escolhas](protocolo.md) · [Resultados numéricos](../../../data/processed/complementar/modelos_recentes/metricas.csv)
 
 | Macro-F1 dos seis estádios | Cinco partições originais | Cinco partições por província | Safra de 2025 |
 |---|---:|---:|---:|
@@ -28,9 +28,9 @@ Os quatro métodos receberam exatamente as mesmas 44 variáveis do braço princi
 
 **Incerteza.** Para o TabPFN-3.5 em relação ao XGBoost, a diferença foi −0,0481 na validação principal (IC 95% de −0,0795 a −0,0158) e +0,1259 na temporal (IC 95% de +0,0574 a +0,1843). Em comparação adicional com a V2 tailandesa de perfil foliar, avaliada nas mesmas linhas de 2025, a diferença foi apenas +0,0063 (0,3669 contra 0,3605, IC 95% de −0,0447 a +0,0529). Foram usadas 5.000 reamostragens pareadas de células de aproximadamente 0,1 grau. São intervalos exploratórios, condicionais aos ajustes e sem correção por múltiplas comparações. As vistorias de 2025 já tinham sido consultadas em estudos anteriores.
 
-**Erros relevantes.** O TabPFN-3.5 acertou 10 das 65 vistorias de pré-colheita em 2025, distribuídas por quatro células em três datas, e nenhuma das 17 de floração. O XGBoost acertou zero e uma, respectivamente. O número pequeno de observações de floração dificulta avaliar diferenças nessa classe. A acurácia balanceada temporal do TabPFN-3.5 foi 0,3370. [Contagens e métricas para cada estádio](por_estadio.csv)
+**Erros relevantes.** O TabPFN-3.5 acertou 10 das 65 vistorias de pré-colheita em 2025, distribuídas por quatro células em três datas, e nenhuma das 17 de floração. O XGBoost acertou zero e uma, respectivamente. O número pequeno de observações de floração dificulta avaliar diferenças nessa classe. A acurácia balanceada temporal do TabPFN-3.5 foi 0,3370. [Contagens e métricas para cada estádio](../../../data/processed/complementar/modelos_recentes/por_estadio.csv)
 
-**Qualidade e alcance.** Entre os 2.370 registros há 2.323 vetores distintos das 44 entradas e 75 linhas cujo vetor exato aparece em outra partição estratificada. Quatro vistorias pertencem a dois vetores que aparecem com estádios registrados diferentes. As duplicações exatas respondem por uma pequena parcela da base. As divisões por província e ano examinam outras fontes de dependência entre exemplos. A cobertura limitada de alguns estádios, a mudança de região/safra e o manejo são hipóteses pertinentes. Os testes desta rodada não isolam o efeito de cada fator. O pacote TabICLv2 sinalizou a alta cardinalidade de cultivar e província para sua codificação padrão. Não houve busca específica de codificações nem ajuste de hiperparâmetros em 2025. [Diagnóstico verificável](diagnostico.json)
+**Qualidade e alcance.** Entre os 2.370 registros há 2.323 vetores distintos das 44 entradas e 75 linhas cujo vetor exato aparece em outra partição estratificada. Quatro vistorias pertencem a dois vetores que aparecem com estádios registrados diferentes. As duplicações exatas respondem por uma pequena parcela da base. As divisões por província e ano examinam outras fontes de dependência entre exemplos. A cobertura limitada de alguns estádios, a mudança de região/safra e o manejo são hipóteses pertinentes. Os testes desta rodada não isolam o efeito de cada fator. O pacote TabICLv2 sinalizou a alta cardinalidade de cultivar e província para sua codificação padrão. Não houve busca específica de codificações nem ajuste de hiperparâmetros em 2025. [Diagnóstico verificável](../../../data/processed/complementar/modelos_recentes/diagnostico.json)
 
 ## Abordagens específicas para fenologia
 
@@ -46,15 +46,4 @@ Manter o XGBoost como referência da classificação de seis estádios com os in
 
 ## Reprodução
 
-Os scripts usam o arquivo features.csv, o manifesto com as 44 colunas, os mapas de partições e as previsões históricas do engine. ORYZELO_ENGINE permite indicar o caminho local. A referência foi calculada no ambiente existente do engine. As redes foram executadas em ambiente separado, com Python 3.12, Torch 2.6.0+cu124, scikit-learn 1.7.2, tabicl 2.2.0, tabm 0.0.3 e tabpfn 10.2.0. Cada arquivo de predições guarda o identificador de origem, a divisão e as seis probabilidades. As revisões, hashes dos pesos e dos dados estão no manifesto. [Manifesto](manifesto.json) · [Execução](avaliar.py) · [Métricas e intervalos](resumir.py) · [Verificações adicionais](diagnostico.py)
-
-```sh
-# No ambiente do engine
-python avaliar.py xgb
-# No ambiente das redes, com os checkpoints locais descritos no manifesto
-python avaliar.py tabicl
-python avaliar.py tabm
-python avaliar.py tabpfn35
-python resumir.py tabicl tabm tabpfn35
-python diagnostico.py
-```
+Consulte o [roteiro e as dependências de GPU](../README.md) e as [revisões dos pesos](checkpoints.json).

@@ -2,7 +2,7 @@
 ## Modelagem Fenológica e Termodinâmica para Orizicultura de Borda (Issue #3)
 
 > **Status**: Concluído | **Fase**: Milestone 1 (Issue #3) | **Data**: 2026-09-18  
-> **Dataset Processado**: `src/dal/data/processed/rice_survey_climate_enriched.csv` (2,398 linhas x 78 colunas)  
+> **Dataset Processado**: `src/dal/data/processed/principal/rice_survey_climate_enriched.csv` (2,398 linhas x 78 colunas)  
 
 ---
 

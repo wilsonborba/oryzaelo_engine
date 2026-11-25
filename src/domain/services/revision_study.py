@@ -25,7 +25,7 @@ from xgboost import XGBClassifier
 from src.domain.services.baseline_ml import CLIMATE_FEATURES
 
 REPO = Path(__file__).resolve().parents[3]
-CACHE = REPO / 'src/dal/data/raw/nasa_power_cache'
+CACHE = REPO / 'src/dal/data/raw/principal/nasa_power_cache'
 PARAMS = ['T2M_MAX', 'T2M_MIN', 'T2M', 'PRECTOTCORR', 'ALLSKY_SFC_SW_DWN', 'RH2M']
 CONTEXT = ['rice_ecosystem', 'rice_variety', 'province']
 DERIVED = ['month', 'day_of_year', 'photoperiod_hours', 'ptq_30d', 'ptq_60d',

@@ -13,7 +13,7 @@ from paths import DATA, REPO
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("action", choices=["audit", "train"])
 action = parser.parse_args().action
-out = REPO / ".research-run" / ("complementar-" + action)
+out = REPO / "src/dal/data/local/reproduction" / ("complementar-" + action)
 source = DATA / "complementar"
 for section in ("results", "biologia", "modelos_recentes"):
     if action == "audit" or section == "modelos_recentes":

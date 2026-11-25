@@ -16,7 +16,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBClassifier
 
-from paths import REPO, SOURCES, RESULTS, THAI
+from paths import REPO, OBS, RESULTS, THAI
 ROOT = Path(__file__).resolve().parents[1]
 OUT = RESULTS / 'results'
 OUT.mkdir(parents=True, exist_ok=True)
@@ -38,7 +38,7 @@ def dataset():
     thai['label']=thai.rice_stage.map(LABEL)
     assert thai.label.notna().all()
     thai['country']='TH'
-    data=pd.read_csv(SOURCES/'international_features.csv.gz',parse_dates=['parsed_date'])
+    data=pd.read_csv(OBS/'international_features.csv.gz',parse_dates=['parsed_date'])
     assert data.parsed_date.max()<pd.Timestamp('2025-01-01')
     for frame in (data,thai):
         frame[CATS]=frame[CATS].fillna('Unknown').astype(str)

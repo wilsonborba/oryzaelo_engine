@@ -2,7 +2,7 @@
 ## Classificação Multiclasse dos Estágios Fenológicos do Arroz (*Oryza sativa L.*)
 
 > **Status**: Concluído | **Fase**: Milestone 1 (Issue #4) | **Data**: 2026-09-18  
-> **Dataset Agrometeorológico**: `src/dal/data/processed/rice_survey_climate_enriched.csv` (2,398 observações)  
+> **Dataset Agrometeorológico**: `src/dal/data/processed/principal/rice_survey_climate_enriched.csv` (2,398 observações)  
 > **Modelos Exportados**: `src/dal/data/processed/models/` (`.onnx`, `.cbm`, `.json`)  
 
 ---

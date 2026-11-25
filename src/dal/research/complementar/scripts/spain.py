@@ -9,8 +9,8 @@ import subprocess
 from zipfile import ZipFile
 from lxml import etree
 
-from paths import RESULTS, SOURCES
-ARCHIVE = SOURCES / 'RAIF_Arroz_Andalucia_2006_2026.zip'
+from paths import RESULTS, RAW, OBS
+ARCHIVE = RAW / 'RAIF_Arroz_Andalucia_2006_2026.zip'
 STAGES = {2:'seedling', 3:'seedling', 4:'tillering', 5:'tillering', 8:'booting', 9:'heading', 10:'flowering'}
 counts = Counter()
 
@@ -82,7 +82,7 @@ with ZipFile(ARCHIVE) as archive:
         xy,variety=next(iter(sites[key]))
         lon,lat=positions[xy]
         rows.append(['ES','|'.join(key[:-1]),date,lat,lon,next(iter(labels)),variety,'Unknown',key[0]])
-    with (SOURCES/'spain.csv').open('w') as f:
+    with (OBS/'spain.csv').open('w') as f:
         w=csv.writer(f);w.writerow('country site parsed_date lat_clean lon_clean label rice_variety rice_ecosystem province'.split());w.writerows(sorted(rows))
     counts['accepted_parcel_dates']=len(rows)
     (RESULTS/'results/spain_audit.json').write_text(json.dumps(counts,indent=2))

@@ -10,8 +10,8 @@ from statistics import mean
 
 from prepare_revision import ROOT, prepare
 
-REFERENCE = ROOT / "src/dal/data/tcc/principal"
-OUTPUT = ROOT / ".research-run/principal"
+REFERENCE = ROOT / "src/dal/data/processed/principal"
+OUTPUT = ROOT / "src/dal/data/local/reproduction/principal"
 
 
 def check_predictions(directory):

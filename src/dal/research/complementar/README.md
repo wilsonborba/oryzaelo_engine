@@ -21,7 +21,7 @@ O combinado de quatro países acertou 295 de 389 casos de perfilhamento, 3 de 17
 
 | Base | Observações aceitas com clima | Observações externas usadas no treino | Proveniência e limites |
 |---|---:|---:|---|
-| Tailândia | 2.370 | — | Levantamento de pragas e doenças do Rice Department com estádio registrado em campo, 2.398 antes da limpeza. Os arquivos estão no [catálogo de dados](../../data/tcc/README.md). |
+| Tailândia | 2.370 | — | Levantamento de pragas e doenças do Rice Department com estádio registrado em campo, 2.398 antes da limpeza. Os arquivos estão no [catálogo de dados](../../data/README.md). |
 | Espanha | 18.558 | 1.600 | RAIF, Junta de Andalucía, dois arquivos XML por tipo de entidade na distribuição. 1.019 parcelas na amostra aceita, 572 datas. Cinco estádios, sem pré-colheita. [Catálogo](https://www.juntadeandalucia.es/datosabiertos/portal/dataset/raif) e [protocolo de campo](https://www.juntadeandalucia.es/agriculturapescaaguaydesarrollorural/raif/wp-content/uploads/2023/07/ProtocolosCampos_Arroz.pdf). |
 | Estados Unidos | 432 | 139 | Parcelas de Arkansas, 55 datas. Calculou-se 50% de espigamento a partir da emergência de cada parcela. Os CSV vieram do repositório dos autores, commit 2e9a01bee7d2c604ef16e7ed1c56361e7de5406f. Usou-se o centro do ponto de consulta 34,5° N, 91,5° W para representar a estação. [Dryad](https://doi.org/10.5061/dryad.v41ns1s4z), [dados agronômicos](https://github.com/FareedFarag/TPPJ-Modeling-Code/tree/2e9a01bee7d2c604ef16e7ed1c56361e7de5406f/Hypothesis_2/Datasets/Agronomic) e [cadastro da estação](https://glis.fao.org/glis/wiews/detail?wiewsCode=USA970). |
 | Japão | 6 | 6 | Três cultivares em uma estação de Kuroishi, 2023–2024. Datas de espigamento transcritas das colunas observadas 本年 e 前年. O geocodificador do GSI localizou o bairro Tanaka em 40,665489° N e 140,588745° E. A posição representa a localidade da estação. [Boletim primário](https://www.nounavi-aomori.jp/farmer/wp-content/uploads/2024/08/4b55ec8b241fd9b0b9eff0bec315f5c6-1.pdf) e [endereço](https://aomori-itc.or.jp/aboutcenter/access.html). |
@@ -42,13 +42,13 @@ python src/dal/research/complementar/reproduce.py audit
 python src/dal/research/complementar/reproduce.py train
 ```
 
-A auditoria recalcula os resultados do combinado, as comparações biológicas por cobertura e as métricas das quatro arquiteturas nas três avaliações. O treino repete a seleção por validação, o corte temporal, as análises de sensibilidade e os experimentos de biologia. Também verifica as classes do candidato exportado nas 856 vistorias de 2025. As saídas ficam em `.research-run/complementar-audit/` e `.research-run/complementar-train/`.
+A auditoria recalcula os resultados do combinado, as comparações biológicas por cobertura e as métricas das quatro arquiteturas nas três avaliações. O treino repete a seleção por validação, o corte temporal, as análises de sensibilidade e os experimentos de biologia. Também verifica as classes do candidato exportado nas 856 vistorias de 2025. As saídas ficam em `src/dal/data/local/reproduction/complementar-audit/` e `src/dal/data/local/reproduction/complementar-train/`.
 
 | Pergunta | Texto | Evidência por observação |
 |---|---|---|
-| Acrescentar outros países melhora a previsão na safra de 2025? | Métodos e resultados acima | [Previsões por composição](../../data/tcc/complementar/results/forward_predictions.csv.gz) |
-| A informação biológica da cultivar agrega valor? | [Pesquisa](biologia/pesquisa.md), [protocolo](biologia/protocolo.md), [resultados temporais](biologia/resultados.md), [cinco partições](biologia/cinco_particoes.md) | [Previsões e contrastes](../../data/tcc/complementar/biologia) |
-| As arquiteturas recentes superam o controle? | [Pesquisa](modelos_recentes/pesquisa.md) e [protocolo](modelos_recentes/protocolo.md) | [Previsões e métricas por modelo](../../data/tcc/complementar/modelos_recentes) |
+| Acrescentar outros países melhora a previsão na safra de 2025? | Métodos e resultados acima | [Previsões por composição](../../data/processed/complementar/results/forward_predictions.csv.gz) |
+| A informação biológica da cultivar agrega valor? | [Pesquisa](biologia/pesquisa.md), [protocolo](biologia/protocolo.md), [resultados temporais](biologia/resultados.md), [cinco partições](biologia/cinco_particoes.md) | [Previsões e contrastes](../../data/processed/complementar/biologia) |
+| As arquiteturas recentes superam o controle? | [Pesquisa](modelos_recentes/pesquisa.md) e [protocolo](modelos_recentes/protocolo.md) | [Previsões e métricas por modelo](../../data/processed/complementar/modelos_recentes) |
 
 ## Reconstruir as fontes internacionais
 
@@ -56,15 +56,16 @@ A matriz climática publicada permite iniciar o treino diretamente. Para repetir
 
 ```bash
 python -m pip install lxml
-mkdir -p .research-run/extracao
-cp -R src/dal/data/tcc/complementar/fontes/. .research-run/extracao/
-export ORYZELO_SOURCES="$PWD/.research-run/extracao"
-export ORYZELO_RESULTS="$PWD/.research-run/extracao-resultados"
-mkdir -p "$ORYZELO_RESULTS/results"
+mkdir -p src/dal/data/local/reproduction/extracao
+cp -R src/dal/data/raw/complementar/. src/dal/data/local/reproduction/extracao/
+export ORYZELO_SOURCES="$PWD/src/dal/data/local/reproduction/extracao"
+export ORYZELO_OBSERVATIONS="$PWD/src/dal/data/local/reproduction/observacoes"
+export ORYZELO_RESULTS="$PWD/src/dal/data/local/reproduction/extracao-resultados"
+mkdir -p "$ORYZELO_RESULTS/results" "$ORYZELO_OBSERVATIONS"
 python src/dal/research/complementar/scripts/spain.py
 python src/dal/research/complementar/scripts/trials.py
 python src/dal/research/complementar/scripts/weather.py
-unset ORYZELO_SOURCES ORYZELO_RESULTS
+unset ORYZELO_SOURCES ORYZELO_OBSERVATIONS ORYZELO_RESULTS
 python src/dal/research/complementar/biologia/extrair.py
 ```
 
@@ -73,15 +74,15 @@ python src/dal/research/complementar/biologia/extrair.py
 As previsões de referência permitem auditar os resultados em CPU. Para repetir os ajustes, o ambiente do estudo utilizou Python 3.12 em Linux, uma GPU NVIDIA compatível com CUDA 12.4 e PyTorch 2.6.0. Em um terminal separado, na raiz do repositório:
 
 ```bash
-python3.12 -m venv .research-run/neural/.venv
-. .research-run/neural/.venv/bin/activate
+python3.12 -m venv src/dal/data/local/reproduction/neural/.venv
+. src/dal/data/local/reproduction/neural/.venv/bin/activate
 python -m pip install 'torch==2.6.0' --index-url https://download.pytorch.org/whl/cu124
 python -m pip install 'tabicl==2.2.0' 'tabpfn==10.2.0' 'tabm==0.0.3' 'numpy==2.5.5' 'pandas==2.3.3' 'scikit-learn==1.7.2'
 python src/dal/research/complementar/modelos_recentes/checkpoints.py
-export ORYZELO_RESULTS="$PWD/.research-run/neural"
+export ORYZELO_RESULTS="$PWD/src/dal/data/local/reproduction/neural"
 for model in tabm tabicl tabpfn35; do
   python src/dal/research/complementar/modelos_recentes/avaliar.py "$model" || exit 1
 done
 ```
 
-O [manifesto dos pesos](modelos_recentes/checkpoints.json) fixa a revisão, o tamanho e o SHA-256. O provedor do TabPFN pode exigir aceite dos termos e um token de leitura via `HF_TOKEN`. As previsões saem em `.research-run/neural/modelos_recentes/`. O XGBoost de controle usa o ambiente CPU do estudo. Para confrontar os novos resultados, copie os arquivos de referência `xgb_predicoes.csv.gz` e `results/archived_spec_forward.csv` para as pastas correspondentes em `.research-run/neural/` e execute `modelos_recentes/resumir.py` a partir da pasta deste guia, no ambiente CPU com o mesmo `ORYZELO_RESULTS`.
+O [manifesto dos pesos](modelos_recentes/checkpoints.json) fixa a revisão, o tamanho e o SHA-256. O provedor do TabPFN pode exigir aceite dos termos e um token de leitura via `HF_TOKEN`. As previsões saem em `src/dal/data/local/reproduction/neural/modelos_recentes/`. O XGBoost de controle usa o ambiente CPU do estudo. Para confrontar os novos resultados, copie os arquivos de referência `xgb_predicoes.csv.gz` e `results/archived_spec_forward.csv` para as pastas correspondentes em `src/dal/data/local/reproduction/neural/` e execute `modelos_recentes/resumir.py` a partir da pasta deste guia, no ambiente CPU com o mesmo `ORYZELO_RESULTS`.

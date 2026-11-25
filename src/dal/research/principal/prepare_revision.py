@@ -7,7 +7,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
-SOURCE = ROOT / "src/dal/data/raw/ricepest_survey_combined_66_68.csv"
+SOURCE = ROOT / "src/dal/data/raw/principal/ricepest_survey_combined_66_68.csv"
 KNOWN_COORDINATE_ROWS = {102, 522, 553, 884, 1018, 1189, 1442}
 UNCERTAIN_LABEL = "ก่อนเก็บเกี่ยวเกี่ยว"
 EXPECTED_SOURCE_SHA256 = "8ded458fc671f33660101cf4753b1c5427dde604da391786a4c8212839bdaa9b"
@@ -85,4 +85,4 @@ def prepare(output):
 
 
 if __name__ == "__main__":
-    print(json.dumps(prepare(ROOT / ".research-run/principal"), ensure_ascii=False, indent=2))
+    print(json.dumps(prepare(ROOT / "src/dal/data/local/reproduction/principal"), ensure_ascii=False, indent=2))
