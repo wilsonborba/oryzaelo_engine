@@ -26,7 +26,7 @@ def main():
     year = control[control.protocol=="2025"]
     assert np.array_equal(forward.loc[year.source_row_id,"pred"], np.asarray(CLASSES)[year.pred])
     tables, detail = [], []
-    for name in ["xgb", *sys.argv[1:]]:
+    for name in ["xgb", *(sys.argv[1:] or ["tabicl", "tabm", "tabpfn35"])]:
         data = pd.read_csv(HERE/(name+"_predicoes.csv.gz"), dtype={"protocol":str})
         for protocol, rows in data.groupby("protocol"):
             base = control[control.protocol==protocol].set_index("source_row_id").sort_index()

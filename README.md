@@ -11,7 +11,7 @@ A Rust microservice that turns field weather into the rice crop's growth stage, 
 [![ONNX Runtime](https://img.shields.io/badge/inference-ONNX%20Runtime-2A3828)](https://github.com/microsoft/onnxruntime)
 [![Tested on Raspberry Pi 5](https://img.shields.io/badge/tested%20on-Raspberry%20Pi%205-C4512B)](src/dal/research/04_rust_edge_inference_benchmark.md)
 
-[Website](https://oryza-elo.asodya.com/) · [Install](#quick-start) · [Dashboard gallery](https://oryza-elo.asodya.com/#/preview) · [How to use](https://oryza-elo.asodya.com/#/how-to-use) · [Research](#model-and-data)
+[Website](https://oryza-elo.asodya.com/) · [Install](#quick-start) · [Dashboard gallery](https://oryza-elo.asodya.com/#/preview) · [How to use](https://oryza-elo.asodya.com/#/how-to-use) · [Research](#model-and-data) · [Reproduzir o TCC: instalação, dados e experimentos](src/dal/research/README.md)
 
 <br>
 

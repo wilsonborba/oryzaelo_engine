@@ -5,16 +5,11 @@ The original data, deployed model, and historical hardware report remain unchang
 
 ## Run the study
 
-Use the existing research environment and the approved retained CSV.
-The output directory must remain separate from the deployed model directory.
+Follow the [installation and reproduction guide](README.md). From the repository root:
 
 ```bash
-.venv/bin/python -m src.domain.services.revision_study \
-  --survey /path/to/rice_survey_analysis_v2.csv \
-  --out src/dal/data/processed/revision_v2 --phase all
-
-TCC_REVISION_FIXTURE="$PWD/src/dal/data/processed/revision_v2/feature_equivalence_fixture.json" \
-  cargo test --release --test revision_feature_equivalence_test -- --nocapture
+python src/dal/research/principal/reproduce.py train
+TCC_REVISION_FIXTURE="$PWD/.research-run/principal/feature_equivalence_fixture.json" cargo test --release --test revision_feature_equivalence_test
 ```
 
 Individual phases are `prepare`, `fixture`, `evaluate`, `scouting`, and `export`.
@@ -53,12 +48,7 @@ Maximum absolute difference is 0.0100586. Rounded summaries and their empirical-
 
 ## Hardware evidence boundary
 
-No new Raspberry Pi benchmark was run.
-The historical report `04_rust_edge_inference_benchmark.md` describes the original model, SHA-256
-`bedc319209cc5817e31b355654ff54e4581b64e972d2cfa191bf852e2b27cf53`.
-Its measured mean was 56.79 microseconds; maximum round p99 was 80.04 microseconds.
-Those measurements must not be transferred to the new six-stage artifact.
-The new model's Pi-specific latency remains unmeasured. Server accuracy and conversion checks do not establish it.
+[Report 06](06_revision_v2_pi_benchmark.md) records the subsequent five rounds on the Raspberry Pi 5 for the six-stage numerical export. [Report 04](04_rust_edge_inference_benchmark.md) covers the earlier deployed model.
 
 ## Saved evidence
 

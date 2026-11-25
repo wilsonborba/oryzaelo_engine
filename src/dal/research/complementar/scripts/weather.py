@@ -79,6 +79,7 @@ def calendar(data):
     return data
 
 if __name__=='__main__':
+    (RESULTS / 'results').mkdir(parents=True, exist_ok=True)
     data=pd.concat([pd.read_csv(RAW/f,parse_dates=['parsed_date']) for f in ('spain.csv','trials.csv')],ignore_index=True)
     data['query_lat']=(data.lat_clean*2).round()/2
     data['query_lon']=(data.lon_clean*2).round()/2

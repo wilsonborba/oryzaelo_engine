@@ -1,6 +1,6 @@
 # Relatório Técnico 06: Benchmark do Candidato v2 de Seis Classes (Raspberry Pi 5 e MSI)
 
-Medição do modelo exato `rice_stage_six.onnx` com o harness isolado `revision_v2/pi_benchmark/harness/`. O relatório 04 permanece como evidência histórica de outro modelo e não foi alterado.
+Medição do modelo exato `rice_stage_six.onnx` com o harness isolado [principal/pi_benchmark](principal/pi_benchmark). O relatório 04 permanece como evidência histórica de outro modelo e não foi alterado.
 
 ## Artefatos
 
@@ -33,7 +33,7 @@ ONNX Runtime: `ORT Build Info: git-branch=rel-1.28.0, git-commit-id=da9b5e3, fp8
 
 Média das médias: 50.11 µs. Pior p99: 74.19 µs. Critério em todas as rodadas: atendido. Correção: classe 0 (ก่อนเก็บเกี่ยว) em todas as rodadas; maior diferença de probabilidade 4.34e-08.
 
-Ambiente registrado em `revision_v2/pi_benchmark/rasp5/environment.txt`. Tempos brutos em `revision_v2/pi_benchmark/rasp5/round_*_durations.csv`.
+
 
 ## Notebook MSI (Intel Core i7-13700HX, x86_64)
 
@@ -49,7 +49,9 @@ ONNX Runtime: `ORT Build Info: git-branch=rel-1.28.0, git-commit-id=da9b5e3, fp8
 
 Média das médias: 8.63 µs. Pior p99: 12.18 µs. Critério em todas as rodadas: atendido. Correção: classe 0 (ก่อนเก็บเกี่ยว) em todas as rodadas; maior diferença de probabilidade 4.34e-08.
 
-Ambiente registrado em `revision_v2/pi_benchmark/msi/environment.txt`. Tempos brutos em `revision_v2/pi_benchmark/msi/round_*_durations.csv`.
+
+
+Os [resultados por rodada](../data/tcc/principal/pi_benchmark) e o [programa de medição](principal/pi_benchmark) acompanham esta versão.
 
 ## Limites
 

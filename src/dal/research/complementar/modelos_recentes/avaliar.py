@@ -56,6 +56,9 @@ def predict(model, train, labels, test, seed):
     if model == "tabpfn35":
         from tabpfn import TabPFNClassifier
         checkpoint = Path.home()/".cache/oryzelo-models/06bf2ba35c80a92a3b9abb436b99cf49e7a0365e/tabpfn-v3.5-20260909_multiclass.safetensors"
+        with checkpoint.open("rb") as stream:
+            if hashlib.file_digest(stream, "sha256").hexdigest() != "4f1e155b09ae1c9860c75cd0a16f811b7431ddac4cb8022ee5e4498070f44149":
+                raise ValueError("Unexpected TabPFN checkpoint")
         clf = TabPFNClassifier(model_path=checkpoint, device="cuda", n_estimators=4,
                                auto_scale_n_estimators=False, random_state=42,
                                categorical_features_indices=[train.columns.get_loc(c) for c in CATS])

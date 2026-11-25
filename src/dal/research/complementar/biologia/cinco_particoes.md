@@ -10,4 +10,4 @@ Comparação retrospectiva com todas as 2.370 vistorias tailandesas de 2023, 202
 
 O macro-F1 nas cinco partições responde à pergunta principal do projeto sobre classificação das seis fases na distribuição histórica. Talhões próximos e vistorias de uma mesma safra podem aparecer no treino e na avaliação. O teste temporal adicional reserva todas as 856 vistorias de 2025 para avaliar o desempenho em uma safra posterior. As duas avaliações respondem a perguntas distintas. A avaliação original suplementar de seis estádios com dados adicionais da própria vistoria obteve 0,6634. A avaliação de três macrofases obteve 0,7609 e usa rótulos agrupados.
 
-[Métricas](resultados/cinco_particoes_metricas.csv) · [Previsões individuais](resultados/cinco_particoes_predicoes.csv.gz) · [Código da reprodução](cinco_particoes.py) · [Avaliação temporal](resultados.md)
+[Métricas](../../../data/tcc/complementar/biologia/cinco_particoes_metricas.csv) · [Previsões individuais](../../../data/tcc/complementar/biologia/cinco_particoes_predicoes.csv.gz) · [Código da reprodução](cinco_particoes.py) · [Avaliação temporal](resultados.md)

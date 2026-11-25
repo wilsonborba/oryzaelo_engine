@@ -16,7 +16,10 @@ action = parser.parse_args().action
 out = REPO / ".research-run" / ("complementar-" + action)
 source = DATA / "complementar"
 for section in ("results", "biologia", "modelos_recentes"):
-    shutil.copytree(source / section, out / section, dirs_exist_ok=True)
+    if action == "audit" or section == "modelos_recentes":
+        shutil.copytree(source / section, out / section, dirs_exist_ok=True)
+    else:
+        (out / section).mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, ORYZELO_RESULTS=str(out), OPENBLAS_NUM_THREADS="1", OMP_NUM_THREADS="4")
 scripts = []
 if action == "train":
@@ -26,6 +29,11 @@ scripts.extend(["scripts/analyse.py", "biologia/analisar.py", "modelos_recentes/
                 "modelos_recentes/diagnostico.py"])
 for script in scripts:
     subprocess.run([sys.executable, str(HERE / script)], env=env, cwd=REPO, check=True)
+
+if action == "train":
+    for command in [["export.py"], ["candidate.py", "build"], ["candidate.py", "verify"]]:
+        subprocess.run([sys.executable, str(HERE / "scripts" / command[0]), *command[1:]],
+                       env=env, cwd=REPO, check=True)
 
 import pandas as pd
 for section, filename in [("biologia", "metricas.csv"), ("biologia", "contrastes_2025.csv"),
