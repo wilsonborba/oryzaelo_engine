@@ -121,7 +121,9 @@ fn test_onnx_edge_cpu_latency_benchmark() {
     assert!(p99_ms < 5.0, "p99 latency exceeds 5.0 ms ceiling: {:.3} ms", p99_ms);
 
     // 4. Generate Formal Scientific Markdown Report
-    let report_path = repo_root.join("src/dal/research/04_rust_edge_inference_benchmark.md");
+    let output = repo_root.join("src/dal/data/local/reproduction/principal");
+    std::fs::create_dir_all(&output).expect("Failed to create benchmark output directory");
+    let report_path = output.join("edge_inference_benchmark.md");
     let mut file = File::create(&report_path).expect("Failed to create benchmark report file");
 
     writeln!(file, "# Relatório Técnico 04: Benchmark de Inferência de Borda em Rust (ONNX Runtime)").unwrap();

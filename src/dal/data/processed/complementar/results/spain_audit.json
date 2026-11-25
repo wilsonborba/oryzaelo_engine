@@ -1,0 +1,8 @@
+{
+  "in_scope_rows": 76567,
+  "missing_or_ambiguous_site": 30985,
+  "no_recorded_stage": 1045,
+  "coordinate_qc": 181,
+  "mixed_unmapped_or_atypical_visits": 25798,
+  "accepted_parcel_dates": 18558
+}

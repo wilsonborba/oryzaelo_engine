@@ -1,0 +1,6 @@
+{
+  "primary_international": "cat",
+  "best_thai": "cat",
+  "selected_by": "pooled out-of-fold six-class macro-F1 before evaluating 2025",
+  "target": 0.75
+}

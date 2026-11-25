@@ -1,0 +1,10 @@
+arquivo,url,bytes,sha256,resultado
+harvard_face.csv,https://ndownloader.figshare.com/files/3330086,288974,ee430759bde4541b8871c22077665c0ec432902e140b2d3e2f7b0865d6083295,ok
+kasetsart_2019.pdf,https://li01.tci-thaijo.org/index.php/ASJ/article/download/246396/168492,485782,e347274d97ff3f14b8a2896c66cebd9cfeaf22f7557c49a8195da14a34d2ed32,ok
+cornell_irri_ryt.zip,https://ricediversity.org/data/Spindel_2015_PLOS/GS_datasets/phenotypes/RYT_plotdata_by_GHID_corrected_PUBLIC_ACCESS.zip,95924,bb138b26474633f89b8f0bd6f8c9495c35a153f157857f7e571425f44bb74cfe,ok
+geo_gse20345.txt.gz,https://ftp.ncbi.nlm.nih.gov/geo/series/GSE20nnn/GSE20345/matrix/GSE20345_series_matrix.txt.gz,1392217,c7762da0de195fa4620f30d27a709257c0e8aa5de4486446ba43e864b63bb49b,ok
+kdml105.pdf,https://newwebs2.ricethailand.go.th/upload/doc/57/1658045630.pdf,657244,abcd5d28f4748947940faf0b7840bb86414d75848c0f45e0faa3c55d672b44d3,ok
+cornell_rdp1.html,https://ricediversity.org/data/sets/44kgwas/,2083,dfe10ea4759bd154ce235cab8a621e97b7ed24f72c077473e2ab3dadcf7e0a06,ok
+simularroz.pdf,https://github.com/RomuloPBenedetti/CropModelsUFSM-releases-/releases/download/SimulArroz_1.1/Manual.SimulArroz.v1.1.portugues.pdf,1203453,07a3479bba99d2f09f06bb7c0961638ee235313d0d0e128f82d8117b329319ca,ok
+cornell_rdp1_pheno.tsv,https://ricediversity.org/data/sets/44kgwas/RiceDiversity_44K_Phenotypes_34traits_PLINK.txt,116928,88120f7eb1741c3043832c160e5b112842aced68ae4383b26496d7846ce9eea8,ok
+cornell_rdp1_germplasm.csv,https://ricediversity.org/data/sets/44kgwas/RiceDiversity.44K.germplasm.csv,39229,5cfc7bdcdc755581366eb7c66ce0f576a9013e04fa6884aed566cd18b9a30df6,ok
