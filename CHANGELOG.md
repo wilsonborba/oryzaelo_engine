@@ -8,10 +8,14 @@
 
 - Make six-stage research evaluation reproducible
 
+- Isolate benchmark output and verify comparative tables from predictions
+
 
 ### Chores
 
 - Record research reproducibility changes
+
+- Prepare v0.2.0
 
 
 ### Documentation
@@ -40,5 +44,11 @@
 - Integrate reproducible rice phenology studies (#24)
 
 - Promote the TCC studies to development
+
+- Validate release tables and protect measured reports
+
+- Complete release validation workflow
+
+- Integrate final research validation
 
 
