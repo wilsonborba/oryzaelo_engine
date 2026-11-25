@@ -1,0 +1,23 @@
+{
+  "TH": {
+    "macro_f1": 0.3312987172008682,
+    "cv_macro_f1": 0.4911710794234938,
+    "days": 10,
+    "space": 0.45,
+    "analog_fraction": 0.5
+  },
+  "TH_ES": {
+    "macro_f1": 0.3342850272343894,
+    "cv_macro_f1": 0.5033510761287657,
+    "days": 10,
+    "space": 0.45,
+    "analog_fraction": 0.5
+  },
+  "TH_ES_US_JP": {
+    "macro_f1": 0.3389236546154257,
+    "cv_macro_f1": 0.5042528328979502,
+    "days": 10,
+    "space": 0.45,
+    "analog_fraction": 0.5
+  }
+}

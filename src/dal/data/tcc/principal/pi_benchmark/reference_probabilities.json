@@ -1,0 +1,34 @@
+{
+  "source": "numeric_six.cbm predict_proba on the float32 [1,44] benchmark input",
+  "catboost_version": "1.2.10",
+  "numeric_six_cbm_sha256": "02f87c661d7bbb24a726a5bd0fda35e0f853dc33bf8e8e31d86be10ad3a9ccda",
+  "onnx_sha256": "5d4d7e72190d5419a01e1aa3e2328e164335f36f7272a2ed5d979687bfac9f49",
+  "benchmark_input_sha256": "2bc8edcb1514fffdbbf580a683f4fea4927ac52a637ce0feb267d952e7630338",
+  "model_metadata_sha256": "d6e01952aa182c8bb9b95face916513296bdb7edf3efb30a139dc79a91ef3c10",
+  "class_order": [
+    "ก่อนเก็บเกี่ยว",
+    "ตั้งท้อง",
+    "ระยะกล้า",
+    "ออกดอก",
+    "ออกรวง",
+    "แตกกอ"
+  ],
+  "class_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "probabilities": [
+    0.3098721963846202,
+    0.14746399611335453,
+    0.08257231830030697,
+    0.040756048182041774,
+    0.2295720063136487,
+    0.18976343470602777
+  ],
+  "label": 0,
+  "tolerance": 1e-05
+}

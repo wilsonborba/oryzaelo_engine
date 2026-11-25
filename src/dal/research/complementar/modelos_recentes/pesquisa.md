@@ -1,0 +1,60 @@
+# Modelos recentes para classificar seis estádios de arroz
+
+**Resultado de 25/11/2026.** O TabPFN-3.5 obteve macro-F1 de 0,3669 nas 856 vistorias tailandesas de 2025, contra 0,2410 do XGBoost reajustado. Usando a validação principal do TCC, o XGBoost atingiu 0,6189 e liderou entre as quatro arquiteturas comparadas. A melhor rede nessa validação foi o TabICLv2 com 0,5764. A meta de 0,75 continua aberta. A inclusão de um modelo pré-treinado é uma extensão acadêmica da V2.
+
+## Quais descobertas justificavam a comparação
+
+Busca dirigida em fontes primárias até 25/11/2026. A seleção considerou pequenas tabelas com categorias, aprendizado com poucas observações e fenologia de arroz em campo. Foram consultados artigos, anais, implementações dos autores e documentação dos pesos. A busca incluiu inglês, tailandês (ระยะการเจริญเติบโตของข้าว, Sentinel-1), chinês (中国 水稻 生育期 机器学习) e japonês (水稲 生育ステージ 出穂). Não se trata de uma revisão sistemática exaustiva.
+
+| Evidência | Resultado publicado e relevância para o Oryzelo |
+|---|---|
+| MIT, Picard e Ahmed, 2024 | O DeCoDe Lab avaliou uma geração anterior do TabPFN em oito problemas de classificação de projeto de engenharia. A eficiência com poucos dados fundamenta testar essa família em uma tabela do tamanho da nossa. A avaliação era de engenharia e não tinha safras, províncias nem os nossos seis rótulos. [Artigo](https://doi.org/10.1115/1.4064811) · [Código e dados no MIT](https://decode.mit.edu/projects/pfns4ed/) |
+| Washington, Harvard e Stanford, NeurIPS 2024 | Gardner, Perdomo e Schmidt ajustaram o TABULA-8B para prever valores em tabelas. Testaram 329 conjuntos. Com 1 a 32 exemplos por tarefa, o artigo relata vantagem em acurácia sobre comparadores tabulares. Esse regime difere de treinar com cerca de 1.900 vistorias por partição. É uma opção especialmente interessante para uma nova região com pouquíssimos rótulos. [Artigo e afiliações](https://proceedings.neurips.cc/paper_files/paper/2024/file/4fd5cfd2e31bebbccfa5ffa354c04bdc-Paper-Conference.pdf) |
+| Freiburg e colaboradores, Nature 2025, e Prior Labs, 2026 | O TabPFN aprende previamente padrões de tarefas tabulares e usa exemplos rotulados do conjunto de interesse como contexto para inferência. O artigo de 2025 estudou pequenos conjuntos tabulares. O relatório técnico do TabPFN-3.5, submetido em setembro e revisado em novembro de 2026, avalia também distribuições com dependências entre exemplos. Testamos o checkpoint multiclasse da versão 3.5. A licença dos pesos contempla pesquisa acadêmica e estabelece condições próprias para uso comercial. [Artigo de 2025](https://doi.org/10.1038/s41586-024-08328-6) · [Relatório de 2026](https://arxiv.org/abs/2609.17895) · [Licença dos pesos](https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE) |
+| Inria e colaboradores, ICML 2026 | O TabICLv2 também aprende em contexto. Qu e colaboradores ampliaram a diversidade de tabelas sintéticas usadas no pré-treino e publicaram avaliações em TabArena e TALENT. O modelo dispensa uma busca de hiperparâmetros em cada conjunto e os pesos estão disponíveis publicamente. Foi possível executá-lo localmente com as categorias tailandesas. [Artigo](https://proceedings.mlr.press/v306/qu26a.html) · [Implementação oficial](https://github.com/soda-inria/tabicl) |
+| TabM, ICLR 2025 | Uma rede tabular compartilha grande parte dos parâmetros entre múltiplos preditores e combina suas probabilidades. A rede aprende com as vistorias de treino de cada partição. Incluímos uma configuração compacta para representar essa alternativa ao pré-treino. O artigo contempla variantes e ajustes mais amplos. [Artigo](https://proceedings.iclr.cc/paper_files/paper/2025/hash/c1ba41c694834aeef91ae161711d4939-Abstract-Conference.html) · [Implementação](https://github.com/yandex-research/tabm) |
+| TabArena, NeurIPS 2025 | O benchmark coloca várias famílias sob um protocolo comum. A posição relativa varia com conjunto, orçamento de ajuste e ensemble. O escore no Oryzelo exige métrica, rótulos e divisões do próprio TCC. [Benchmark primário](https://proceedings.neurips.cc/paper_files/paper/2025/hash/1697e3fb412da11dc9488249f9e7bbc9-Abstract-Datasets_and_Benchmarks_Track.html) |
+
+## Comparação local
+
+Os quatro métodos receberam exatamente as mesmas 44 variáveis do braço principal tailandês, incluindo cultivar, contexto geográfico e históricos NASA POWER. As duas validações com cinco partições usaram 2.370 vistorias de 2023 a 2025 e avaliaram cada vistoria uma vez fora do seu treino. A validação temporal usou as primeiras 1.514 para treino e as 856 de 2025 para avaliação. O XGBoost reproduziu todas as previsões arquivadas tanto no protocolo principal como no temporal. Para cada método foram realizadas onze avaliações, cinco estratificadas, cinco por província e uma temporal. Foram usadas configurações fixas. [Protocolo e escolhas](protocolo.md) · [Resultados numéricos](metricas.csv)
+
+| Macro-F1 dos seis estádios | Cinco partições originais | Cinco partições por província | Safra de 2025 |
+|---|---:|---:|---:|
+| XGBoost original | **0,6189** | **0,3755** | 0,2410 |
+| TabICLv2 | 0,5764 | 0,3396 | 0,3167 |
+| TabM | 0,5553 | 0,2903 | 0,3164 |
+| TabPFN-3.5 multiclasse | 0,5707 | 0,3435 | **0,3669** |
+
+**Incerteza.** Para o TabPFN-3.5 em relação ao XGBoost, a diferença foi −0,0481 na validação principal (IC 95% de −0,0795 a −0,0158) e +0,1259 na temporal (IC 95% de +0,0574 a +0,1843). Em comparação adicional com a V2 tailandesa de perfil foliar, avaliada nas mesmas linhas de 2025, a diferença foi apenas +0,0063 (0,3669 contra 0,3605, IC 95% de −0,0447 a +0,0529). Foram usadas 5.000 reamostragens pareadas de células de aproximadamente 0,1 grau. São intervalos exploratórios, condicionais aos ajustes e sem correção por múltiplas comparações. As vistorias de 2025 já tinham sido consultadas em estudos anteriores.
+
+**Erros relevantes.** O TabPFN-3.5 acertou 10 das 65 vistorias de pré-colheita em 2025, distribuídas por quatro células em três datas, e nenhuma das 17 de floração. O XGBoost acertou zero e uma, respectivamente. O número pequeno de observações de floração dificulta avaliar diferenças nessa classe. A acurácia balanceada temporal do TabPFN-3.5 foi 0,3370. [Contagens e métricas para cada estádio](por_estadio.csv)
+
+**Qualidade e alcance.** Entre os 2.370 registros há 2.323 vetores distintos das 44 entradas e 75 linhas cujo vetor exato aparece em outra partição estratificada. Quatro vistorias pertencem a dois vetores que aparecem com estádios registrados diferentes. As duplicações exatas respondem por uma pequena parcela da base. As divisões por província e ano examinam outras fontes de dependência entre exemplos. A cobertura limitada de alguns estádios, a mudança de região/safra e o manejo são hipóteses pertinentes. Os testes desta rodada não isolam o efeito de cada fator. O pacote TabICLv2 sinalizou a alta cardinalidade de cultivar e província para sua codificação padrão. Não houve busca específica de codificações nem ajuste de hiperparâmetros em 2025. [Diagnóstico verificável](diagnostico.json)
+
+## Abordagens específicas para fenologia
+
+**Observar a lavoura por radar.** Na Tailândia, a Kasetsart University encontrou diferenças de retroespalhamento do Sentinel-1 entre estádios do arroz, incluindo utilidade da razão VV/VH. Um trabalho de conferência da GISTDA em Suphan Buri avaliou semeadura, perfilhamento e floração e relatou 72% de acurácia global. As três classes e a métrica impedem usar esse número como estimativa do macro-F1 de seis estádios. Para a V2, a hipótese concreta é que a evolução do sinal de radar sobre a lavoura acrescente informação quando duas áreas tiveram clima parecido e estão em fases diferentes. A execução depende de localizar a lavoura com precisão suficiente para amostrar pixels representativos. Os insumos de cada vistoria devem se encerrar na respectiva data. [Kasetsart, artigo de campo](https://li01.tci-thaijo.org/index.php/anres/article/view/254483) · [GISTDA, resumo de conferência, página PDF 200](https://events.thailandricehub.org/icrf/abstractbook/icrf2024.pdf#page=200)
+
+**Incorporar a idade da planta.** Na China, um estudo usou 337 localidades entre 1981 e 2020 e combinou um modelo de desenvolvimento do arroz com aprendizado de máquina. O melhor arranjo incluiu XGBoost após o modelo fisiológico e obteve RMSE de 4,65 dias para espigamento e 5,72 para maturidade. No Japão, um estudo com 74.350 parcelas em 130 estações modelou dias do transplante ao espigamento combinando informação varietal, meteorologia e estrutura espacial. Ambos sustentam combinar biologia e clima quando se conhece a origem da contagem do ciclo. Prever uma data em dias é uma tarefa distinta da classificação de seis estádios em uma visita. [Estudo chinês](https://doi.org/10.1016/j.scitotenv.2024.175585) · [Estudo japonês](https://doi.org/10.1186/s12284-025-00778-4)
+
+**Representações de imagens de satélite.** O TESSERA, da Universidade de Cambridge, publicado na CVPR 2026, transforma séries temporais ópticas e de radar em representações por pixel para tarefas de observação terrestre. Para uma aplicação dentro da safra, uma representação anual pré-calculada que use observações posteriores à vistoria introduziria informação futura. O primeiro teste mais simples é comparar a referência com a mesma referência acrescida do histórico retrospectivo de VV/VH. Avaliar todas as seis classes nas partições originais, por província e por ano. Com acesso a datas verificadas de semeadura ou transplante, testar o acréscimo de idade em dias e tempo térmico em experimento separado. [Cambridge, artigo do TESSERA](https://openaccess.thecvf.com/content/CVPR2026/papers/Feng_TESSERA_Temporal_Embeddings_of_Surface_Spectra_for_Earth_Representation_and_Analysis_CVPR_2026_paper.pdf)
+
+## Decisão para a parcial
+
+Manter o XGBoost como referência da classificação de seis estádios com os insumos principais. Registrar o TabPFN-3.5 como resultado de transferência temporal da V2. O resultado anterior de 0,6634 com características adicionais obtidas durante a vistoria é outro braço de seis estádios, com custo de aquisição diferente. O benefício incremental sobre a V2 com perfil foliar exige replicação. Para a pergunta sobre a meta de 0,75, a próxima intervenção mais fundamentada é medir o ganho de uma observação da planta ou da sua idade. A V2 pode avaliar essa hipótese com o XGBoost e com o TabPFN-3.5, usando os mesmos registros elegíveis para os dois métodos. Os benchmarks neurais desta rodada foram executados na GPU do servidor. A viabilidade no Raspberry Pi 5 continua por medir.
+
+## Reprodução
+
+Os scripts usam o arquivo features.csv, o manifesto com as 44 colunas, os mapas de partições e as previsões históricas do engine. ORYZELO_ENGINE permite indicar o caminho local. A referência foi calculada no ambiente existente do engine. As redes foram executadas em ambiente separado, com Python 3.12, Torch 2.6.0+cu124, scikit-learn 1.7.2, tabicl 2.2.0, tabm 0.0.3 e tabpfn 10.2.0. Cada arquivo de predições guarda o identificador de origem, a divisão e as seis probabilidades. As revisões, hashes dos pesos e dos dados estão no manifesto. [Manifesto](manifesto.json) · [Execução](avaliar.py) · [Métricas e intervalos](resumir.py) · [Verificações adicionais](diagnostico.py)
+
+```sh
+# No ambiente do engine
+python avaliar.py xgb
+# No ambiente das redes, com os checkpoints locais descritos no manifesto
+python avaliar.py tabicl
+python avaliar.py tabm
+python avaliar.py tabpfn35
+python resumir.py tabicl tabm tabpfn35
+python diagnostico.py
+```

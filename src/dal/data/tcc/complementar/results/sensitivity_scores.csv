@@ -1,0 +1,5 @@
+protocol,arm,model,n,macro_f1
+random,TH,cat,2370,0.5929443227180679
+random,TH_ES_US_JP,cat,2370,0.592220740812296
+province,TH,cat,2370,0.38017722525857606
+province,TH_ES_US_JP,cat,2370,0.37538795612008863

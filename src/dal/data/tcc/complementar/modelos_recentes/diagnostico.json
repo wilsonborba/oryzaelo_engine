@@ -1,0 +1,18 @@
+{
+  "n": 2370,
+  "distinct_44_input_vectors": 2323,
+  "rows_in_repeated_vectors": 93,
+  "rows_in_conflicting_vectors": 4,
+  "conflicting_vectors": 2,
+  "rows_with_exact_vector_in_other_random_fold": 75,
+  "bio_thai_2025": 0.3605223564255091,
+  "tabpfn35_2025": 0.36685267793761384,
+  "delta": 0.00633032151210472,
+  "ci95": [
+    -0.04465245929161362,
+    0.052919031237387386
+  ],
+  "cells": 231,
+  "pfn_correct_preharvest_cells": 4,
+  "pfn_correct_preharvest_dates": 3
+}

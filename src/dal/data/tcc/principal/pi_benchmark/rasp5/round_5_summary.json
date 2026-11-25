@@ -1,0 +1,72 @@
+{
+  "arch": "aarch64",
+  "correctness": {
+    "all_finite": true,
+    "argmax_matches_label": true,
+    "expected_classes": 6,
+    "label": 0,
+    "label_class": "ก่อนเก็บเกี่ยว",
+    "label_matches_reference": true,
+    "max_abs_probability_difference": 4.3443489528005585e-08,
+    "n_probabilities": 6,
+    "probabilities": [
+      0.30987223982810974,
+      0.14746399223804474,
+      0.0825723335146904,
+      0.04075602814555168,
+      0.22957196831703186,
+      0.1897634118795395
+    ],
+    "probability_sum": 0.9999999739229679,
+    "reference_label": 0,
+    "tolerance": 1e-05
+  },
+  "criterion": {
+    "p99_ms": 0.074185,
+    "passed": true,
+    "rule": "p99 < 200 ms in this round"
+  },
+  "finished_unix": 1793182586,
+  "host": "rasp5",
+  "latency_ms": {
+    "max": 0.114334,
+    "mean": 0.06600113700000021,
+    "min": 0.063963,
+    "p50": 0.065778,
+    "p95": 0.06694499999999999,
+    "p99": 0.074185
+  },
+  "latency_us": {
+    "max": 114.334,
+    "mean": 66.00113700000021,
+    "min": 63.963,
+    "p50": 65.778,
+    "p95": 66.945,
+    "p99": 74.185
+  },
+  "model": "rice_stage_six.onnx",
+  "onnxruntime_build_info": "ORT Build Info: git-branch=rel-1.28.0, git-commit-id=da9b5e3, fp8-kv-cache=1, build type=Release",
+  "ort_crate": "2.0.0-rc.13",
+  "peak_rss": {
+    "decimal_mb": 66.076672,
+    "kib": 64528,
+    "source": "/proc/self/status VmHWM (kB, i.e. KiB), read after the timed loop"
+  },
+  "protocol": {
+    "clock": "std::time::Instant (monotonic)",
+    "iterations": 1000,
+    "percentile_rule": "nearest rank, index ceil(p*n)-1 on the zero-indexed sorted vector",
+    "timed_operation": "input tensor build + session.run + label and probability extraction",
+    "warmup": 50
+  },
+  "round": 5,
+  "session": {
+    "execution_provider": "CPU (default)",
+    "graph_optimization": "Level3",
+    "inter_op_threads": 1,
+    "intra_op_threads": 1,
+    "parallel_execution": false
+  },
+  "started_unix": 1793182586,
+  "status": "ok"
+}
