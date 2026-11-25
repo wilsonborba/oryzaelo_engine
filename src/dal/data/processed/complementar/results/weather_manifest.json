@@ -1,0 +1,51 @@
+[
+  {
+    "file": "34.5_-91.5_20210524_20220818.json",
+    "sha256": "3954362f7c2b7e880f587640e82646496af24a541b75237a4c14fe1a744426ba",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-91.5&latitude=34.5&start=20210524&end=20220818&format=JSON",
+    "rows": 432,
+    "complete": 432
+  },
+  {
+    "file": "36.0_-6.0_20150404_20240903.json",
+    "sha256": "a84106a574cfbd8753fea25b5789cdeb7359c14251b08713191bf5fef10d51cc",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-6.0&latitude=36.0&start=20150404&end=20240903&format=JSON",
+    "rows": 398,
+    "complete": 398
+  },
+  {
+    "file": "36.5_-6.0_20150417_20240910.json",
+    "sha256": "9fa9ac4497bcfc5235d18df7c2a14d5bb2aed43d87604cbb7351bc969c8136c4",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-6.0&latitude=36.5&start=20150417&end=20240910&format=JSON",
+    "rows": 586,
+    "complete": 586
+  },
+  {
+    "file": "37.0_-6.5_20150320_20240920.json",
+    "sha256": "a3a6f31358a912a3b993ac22b1eca48ba45e097d7d81f5e83914cdbc69563883",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-6.5&latitude=37.0&start=20150320&end=20240920&format=JSON",
+    "rows": 843,
+    "complete": 843
+  },
+  {
+    "file": "37.0_-6.0_20150403_20240920.json",
+    "sha256": "d646916ecbf535fabad64c030ddfdf4c8b3cf3a852b035724e5044728056223a",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-6.0&latitude=37.0&start=20150403&end=20240920&format=JSON",
+    "rows": 16558,
+    "complete": 16558
+  },
+  {
+    "file": "37.5_-6.0_20150414_20240913.json",
+    "sha256": "c6b58441588963d2faa6e95ea7a8598f7452def8af0ccf69f54453ecb31bd2a4",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=-6.0&latitude=37.5&start=20150414&end=20240913&format=JSON",
+    "rows": 173,
+    "complete": 173
+  },
+  {
+    "file": "40.5_140.5_20230530_20240730.json",
+    "sha256": "b5ce3a00072a49df89d7dd5836dae837c89919c3b1ca658ad2fe5e04ced20c40",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX%2CT2M_MIN%2CT2M%2CPRECTOTCORR%2CALLSKY_SFC_SW_DWN%2CRH2M&community=AG&longitude=140.5&latitude=40.5&start=20230530&end=20240730&format=JSON",
+    "rows": 6,
+    "complete": 6
+  }
+]

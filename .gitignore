@@ -18,7 +18,9 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-src/dal/data/raw/nasa_power_cache/
+src/dal/data/raw/principal/nasa_power_cache/*
+!src/dal/data/raw/principal/nasa_power_cache/grid_*.json
+/src/dal/data/local/reproduction/
 catboost_info/
 
 # Rust build artifacts
